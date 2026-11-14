@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SoundLevelData" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="SoundLevelData" load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/level_data.gd" id="1"]
 [ext_resource type="Resource" path="res://resources/clips/drips.tres" id="2"]
@@ -6,18 +6,21 @@
 [ext_resource type="AudioStream" path="res://assets/audio/ambience.wav" id="4"]
 [ext_resource type="Script" path="res://scripts/data/audio_clip_data.gd" id="5"]
 
+[ext_resource type="Resource" path="res://resources/clips/knock.tres" id="6"]
+[ext_resource type="Resource" path="res://resources/clips/alarm.tres" id="7"]
+
 [resource]
 script = ExtResource("1")
 title = "门后"
 subtitle = "维修走廊 / 一关机制原型"
 introduction = "她看不见门外。先试听两段声音，再改变它们出现的顺序。"
-clips = Array[ExtResource("5")]([ExtResource("2"), ExtResource("3")])
-initial_order = Array[String](["drips", "gasp"])
-correct_order = Array[String](["gasp", "drips"])
-slot_duration = 2.5
-duration = 9.0
-failure_time = 8.2
-stage_starts = PackedFloat32Array(0, 2.5, 5, 7)
+clips = Array[ExtResource("5")]([ExtResource("2"), ExtResource("3"), ExtResource("6"), ExtResource("7")])
+initial_order = Array[String](["drips", "gasp", "knock", "alarm"])
+correct_order = Array[String](["gasp", "drips", "knock", "alarm"])
+slot_duration = 3.0
+duration = 12.0
+failure_time = 12.0
+stage_starts = PackedFloat32Array(0, 3, 6, 9)
 ambience = ExtResource("4")
 success_title = "平安离开"
 success_caption = "她先听见惊叫，再听见滴答，选择回撤求助，赶在卷闸落下前离开。"

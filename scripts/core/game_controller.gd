@@ -11,7 +11,6 @@ var _preview_slot: int = -1
 
 @onready var film: SoundFilmViewport = %Film
 @onready var timeline: SoundAudioTimeline = %AudioTimeline
-@onready var heading: Label = %StoryHeading
 @onready var caption: Label = %Caption
 @onready var status: Label = %Status
 @onready var play_button: Button = %PlayButton
@@ -36,6 +35,7 @@ func _ready() -> void:
 	add_child(playback)
 	playback.configure(level, audio)
 	playback.frame_changed.connect(_on_frame)
+	playback.transition_changed.connect(_on_transition)
 	playback.cue_changed.connect(func(slot: int) -> void: _active_slot = slot)
 	playback.completed.connect(_on_completed)
 	audio.preview_finished.connect(_clear_preview)
@@ -45,14 +45,16 @@ func _ready() -> void:
 	stop_button.pressed.connect(_stop)
 	reset_button.pressed.connect(_reset)
 	mute_button.pressed.connect(_toggle_mute)
-	film.media_warning.connect(func(message: String) -> void: caption.text = message)
-	%Chapter.text = "01 / " + level.title + "\n" + level.subtitle
+	film.media_warning.connect(func(message: String) -> void: push_warning(message))
+
 	progress.max_value = level.duration
 	_reset()
 
 func _show_error(message: String) -> void:
+	status.show()
 	status.text = "关卡未就绪"
 	caption.text = message
+	caption.get_parent().show()
 	for button in [play_button, stop_button, reset_button, mute_button]:
 		button.disabled = true
 	push_error(message)
@@ -62,16 +64,15 @@ func _reset() -> void:
 	_clear_preview()
 	state.reset(level)
 	timeline.rebuild(level, state.order)
-	_reset_presentation("等待放映")
+	_reset_presentation()
 
-func _reset_presentation(message: String) -> void:
+func _reset_presentation() -> void:
 	film.reset()
 	_active_slot = -1
 	progress.value = 0
 	time_label.text = "00.0 / %04.1f s" % level.duration
-	heading.text = "隔着磨砂门"
-	caption.text = level.introduction
-	status.text = message
+	caption.text = ""
+	status.hide()
 	status.add_theme_color_override("font_color", SoundGameTheme.GOLD)
 	timeline.update_playhead(0, -1)
 	_refresh_controls()
@@ -84,9 +85,9 @@ func _move_clip(source: int, target: int) -> void:
 	state.order = OrderRules.moved(state.order, source, target)
 	state.phase = SoundRunState.Phase.EDITING
 	timeline.rebuild(level, state.order)
-	_reset_presentation("顺序已调整 · 等待放映")
+	_reset_presentation()
 	# Keep keyboard focus on the moved clip after rebuilding its row.
-	timeline.strips[target].preview_button.grab_focus()
+	timeline.strips[target].grab_focus()
 
 func _preview(slot: int) -> void:
 	if not state.can_edit() or slot < 0 or slot >= state.order.size():
@@ -117,19 +118,17 @@ func _play_or_pause() -> void:
 		state.phase = SoundRunState.Phase.PAUSED
 		playback.set_paused(true)
 		film.set_paused(true)
-		status.text = "已暂停"
 	elif state.phase == SoundRunState.Phase.PAUSED:
 		state.phase = SoundRunState.Phase.PLAYING
 		playback.set_paused(false)
 		film.set_paused(false)
-		status.text = "放映中 · 第 %02d 次" % state.attempts
 	else:
 		_clear_preview()
 		state.phase = SoundRunState.Phase.PLAYING
 		state.attempts += 1
-		status.text = "放映中 · 第 %02d 次" % state.attempts
+		status.hide()
 		status.add_theme_color_override("font_color", SoundGameTheme.GOLD)
-		film.start_route(level, OrderRules.is_success(level, state.order), state.order[0])
+		film.start_route(level, OrderRules.is_success(level, state.order), state.order)
 		playback.start(state.order)
 	_refresh_controls()
 
@@ -137,18 +136,20 @@ func _stop() -> void:
 	playback.stop()
 	_clear_preview()
 	state.phase = SoundRunState.Phase.EDITING
-	_reset_presentation("已停止 · 可以重新剪辑")
+	_reset_presentation()
 
 func _toggle_mute() -> void:
 	audio.set_muted(not audio.muted)
 	mute_button.text = "取消静音 [M]" if audio.muted else "声音：开 [M]"
 	mute_button.button_pressed = audio.muted
 
+func _on_transition(stage: int, fraction: float) -> void:
+	film.update_transition(stage, fraction)
+	timeline.update_playhead(playback.elapsed, -1)
+
 func _on_frame(elapsed: float, stage: int, fraction: float) -> void:
 	film.update_frame(elapsed, stage, fraction, level)
-	var story := SoundStoryPresenter.text_for(stage, fraction, playback.route_success)
-	heading.text = story[0]
-	caption.text = story[1]
+	caption.text = ""
 	progress.value = elapsed
 	time_label.text = "%04.1f / %04.1f s" % [elapsed, level.duration]
 	timeline.update_playhead(elapsed, _active_slot)
@@ -156,10 +157,9 @@ func _on_frame(elapsed: float, stage: int, fraction: float) -> void:
 func _on_completed(success: bool) -> void:
 	state.phase = SoundRunState.Phase.SUCCEEDED if success else SoundRunState.Phase.FAILED
 	film.freeze()
-	status.text = "结局 · " + (level.success_title if success else level.failure_title)
+	status.hide()
 	status.add_theme_color_override("font_color", SoundGameTheme.TEAL if success else SoundGameTheme.RED)
-	heading.text = level.success_title if success else level.failure_title
-	caption.text = level.success_caption if success else level.failure_caption
+	caption.text = ""
 	_active_slot = -1
 	timeline.update_playhead(playback.elapsed, -1)
 	_refresh_controls()
@@ -171,16 +171,19 @@ func _refresh_controls() -> void:
 	reset_button.disabled = locked
 	match state.phase:
 		SoundRunState.Phase.PLAYING:
-			play_button.text = "暂停放映 [空格]"
+			play_button.text = "暂停"
 		SoundRunState.Phase.PAUSED:
-			play_button.text = "继续放映 [空格]"
+			play_button.text = "继续放映"
 		_:
-			play_button.text = "按此顺序放映 [空格]"
+			play_button.text = "放映"
 
 func _input(event: InputEvent) -> void:
 	if playback == null or not event is InputEventKey or not event.pressed or event.echo:
 		return
 	match event.keycode:
+		KEY_F11:
+			var window := get_window()
+			window.mode = Window.MODE_WINDOWED if window.mode == Window.MODE_FULLSCREEN else Window.MODE_FULLSCREEN
 		KEY_SPACE:
 			_play_or_pause()
 		KEY_ESCAPE:

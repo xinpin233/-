@@ -8,3 +8,6 @@ extends Resource
 @export var stream: AudioStream
 @export var tint: Color = Color("8bd0bf")
 @export var waveform: PackedFloat32Array = PackedFloat32Array()
+
+@export var calm_scene: PackedScene
+@export var alarmed_scene: PackedScene

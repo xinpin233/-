@@ -43,11 +43,20 @@ func reset() -> void:
 		frame.queue_redraw()
 	_fit()
 
-func start_route(level: SoundLevelData, safe: bool, first_clip: String) -> void:
+func start_route(level: SoundLevelData, safe: bool, order: Array[String]) -> void:
 	reset()
+	var previous_x := 290.0
 	for frame in _frames:
 		frame.safe_route = safe
-		frame.first_cue = 1 if first_clip == "gasp" else 0
+		frame.first_cue = 1 if order[0] == "gasp" else 0
+		frame.configure_clip(level.find_clip(order[frame.stage]), level.slot_duration)
+		frame.start_x = previous_x
+		match order[frame.stage]:
+			"drips": frame.end_x = 405.0
+			"gasp": frame.end_x = previous_x - 45.0
+			"knock": frame.end_x = 173.0 if safe else 815.0
+			"alarm": frame.end_x = 194.0 if safe else 815.0
+		previous_x = frame.end_x
 		frame.queue_redraw()
 	var path := level.success_video if safe else level.failure_video
 	if path.is_empty():
@@ -69,8 +78,17 @@ func update_frame(elapsed: float, stage: int, progress: float, level: SoundLevel
 		return
 	_frames[stage].progress = progress
 	_frames[stage].queue_redraw()
-	var slide := smoothstep(0.0, 0.2, elapsed - level.stage_starts[stage])
-	_rail_offset = -1120.0 * (stage - 1.0 + slide) if stage > 0 else 0.0
+	_video.paused = false
+	_rail_offset = -1120.0 * stage
+	_fit()
+
+func update_transition(stage: int, fraction: float) -> void:
+	_video.paused = true
+	_frames[stage - 1].progress = 1.0
+	_frames[stage - 1].queue_redraw()
+	_frames[stage].progress = 0.0
+	_frames[stage].queue_redraw()
+	_rail_offset = -1120.0 * (stage - 1.0 + smoothstep(0.0, 1.0, fraction))
 	_fit()
 
 func set_paused(value: bool) -> void:

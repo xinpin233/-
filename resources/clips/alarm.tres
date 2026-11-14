@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="AudioClipData" load_steps=3 format=3]
+[ext_resource type="Script" path="res://scripts/data/audio_clip_data.gd" id="1"]
+[ext_resource type="AudioStream" path="res://assets/audio/alarm.wav" id="2"]
+[resource]
+script = ExtResource("1")
+id = "alarm"
+title = "警铃"
+stream = ExtResource("2")
+tint = Color(0.88, 0.44, 0.36, 1)

@@ -11,11 +11,38 @@ var stage := 0
 var safe_route := false
 var first_cue := 0
 var progress := 0.0
+var start_x := 290.0
+var end_x := 364.0
+var clip_id := ""
+var custom_scene: Node
+var clip_duration := 3.0
+
+func configure_clip(clip: AudioClipData, duration: float) -> void:
+	clip_id = clip.id
+	clip_duration = duration
+	if is_instance_valid(custom_scene):
+		remove_child(custom_scene)
+		custom_scene.queue_free()
+	custom_scene = null
+	var source := clip.alarmed_scene if safe_route else clip.calm_scene
+	if source != null:
+		custom_scene = source.instantiate()
+		add_child(custom_scene)
+
+func _process(_delta: float) -> void:
+	if is_instance_valid(custom_scene):
+		var animation := custom_scene.get_node_or_null("AnimationPlayer") as AnimationPlayer
+		if animation != null and animation.has_animation("play"):
+			animation.play("play")
+			animation.seek(progress * clip_duration, true)
+			animation.pause()
 
 func shape(points: Array, color: Color) -> void:
 	draw_colored_polygon(PackedVector2Array(points), color)
 
 func _draw() -> void:
+	if is_instance_valid(custom_scene):
+		return
 	draw_rect(Rect2(0, 0, 1100, 375), EDGE)
 	draw_set_transform(Vector2(0, 20))
 	var accent := GOLD
@@ -47,19 +74,13 @@ func _draw() -> void:
 		draw_line(Vector2(px, py), Vector2(px + 8 + i % 11, py), Color(1, 1, 1, 0.045))
 	if stage <= 1:
 		var pulse := fposmod(progress * 3.0, 1.0)
-		var is_gasp := (first_cue == 1) == (stage == 0)
+		var is_gasp := clip_id == "gasp"
 		for i in (4 if is_gasp else 2):
 			draw_arc(Vector2(609, 125), 22 + i * 13 + pulse * 13, -0.9, 0.9, 22, Color(accent, 0.6 * (1.0 - pulse)), 2.0, true)
-	var position_x := 364.0
-	var moving := stage == 2
-	var facing := 1.0
-	if moving:
-		position_x = lerpf(364, 173 if safe_route else 815, smoothstep(0.0, 1.0, progress))
-		facing = -1.0 if safe_route else 1.0
-	elif stage == 3:
-		position_x = 194.0 if safe_route else 815.0
-		facing = -1.0 if safe_route else 1.0
-	if stage == 3:
+	var position_x := lerpf(start_x, end_x, smoothstep(0.1, 0.9, progress))
+	var moving := absf(end_x - start_x) > 5.0
+	var facing := -1.0 if end_x < start_x else 1.0
+	if clip_id == "alarm":
 		draw_shutter(accent)
 		if safe_route:
 			shape([Vector2(24, 68), Vector2(113, 87), Vector2(113, 248), Vector2(24, 297)], GREEN.darkened(0.50))
