@@ -18,8 +18,8 @@ func setup(data: AudioClipData, index: int, _count: int) -> void:
 	tooltip_text = "点击试听，拖动调整顺序。"
 	focus_mode = Control.FOCUS_ALL
 	var panel := StyleBoxFlat.new()
-	panel.bg_color = clip.tint.darkened(0.18)
-	panel.border_color = clip.tint.lightened(0.15)
+	panel.bg_color = clip.tint
+	panel.border_color = clip.tint.lightened(0.08)
 	panel.border_width_top = 2
 	panel.border_width_bottom = 3
 	panel.content_margin_left = 20

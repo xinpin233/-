@@ -27,6 +27,10 @@ func configure_clip(clip: AudioClipData, duration: float) -> void:
 	var source := clip.alarmed_scene if safe_route else clip.calm_scene
 	if source != null:
 		custom_scene = source.instantiate()
+		if custom_scene is Node2D:
+			custom_scene.scale.y = 375.0 / 825.0
+		elif custom_scene is Control:
+			custom_scene.scale.y = 375.0 / 825.0
 		add_child(custom_scene)
 
 func _process(_delta: float) -> void:

@@ -98,7 +98,5 @@ func freeze() -> void:
 	_video.paused = true
 
 func _fit() -> void:
-	var frame_size := Vector2(1100, 375)
-	var factor := minf(size.x / frame_size.x, size.y / frame_size.y)
-	_rail.scale = Vector2.ONE * factor
-	_rail.position = (size - frame_size * factor) * 0.5 + Vector2(_rail_offset * factor, 0)
+	_rail.scale = Vector2(size.x / 1100.0, size.y / 375.0)
+	_rail.position = Vector2(_rail_offset * _rail.scale.x, 0)

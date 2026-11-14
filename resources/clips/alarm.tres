@@ -6,4 +6,4 @@ script = ExtResource("1")
 id = "alarm"
 title = "警铃"
 stream = ExtResource("2")
-tint = Color(0.88, 0.44, 0.36, 1)
+tint = Color(0.76, 0.63, 0.63, 1)
