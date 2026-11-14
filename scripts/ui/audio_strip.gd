@@ -109,14 +109,11 @@ func _layout_surface(surface: Control, top_bar: ColorRect, wave: SoundWaveformVi
 	_title_label.size.x = maxf(20, surface.size.x - 112)
 
 func _background() -> Color:
-	if _lifted or clip.id in ["knock", "phone_feedback"]: return SoundGameTheme.RED
-	if clip.id in ["gasp", "coin"]: return Color("fdfcf8")
-	if clip.id == "alarm": return Color("393937")
-	return Color("bfbcb3")
+	return clip.tint
 
 func _foreground() -> Color:
-	if _lifted or clip.id in ["knock", "alarm", "phone_feedback"]: return Color("f3eae0")
-	return Color("53534f")
+	# Choose readable ink from the material color, independent of drag or slot.
+	return SoundGameTheme.INK if clip.tint.srgb_to_linear().get_luminance() > 0.179 else Color("fffaf0")
 
 func _panel_style(selected: bool) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
@@ -181,7 +178,7 @@ func set_progress(value: float, active: bool) -> void:
 		waveform.playhead = value if active else -1.0
 		waveform.queue_redraw()
 	if _slot_label:
-		_slot_label.add_theme_color_override("font_color", clip.tint if active else _foreground())
+		_slot_label.add_theme_color_override("font_color", _foreground())
 
 func set_previewing(value: bool) -> void:
 	set_selected(value or _lifted)

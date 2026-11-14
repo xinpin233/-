@@ -66,8 +66,8 @@ func _ready() -> void:
 	_drop_slot = Panel.new()
 	_drop_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var slot_style := StyleBoxFlat.new()
-	slot_style.bg_color = Color("dc1c22", 0.08)
-	slot_style.border_color = SoundGameTheme.RED
+	slot_style.bg_color = Color("151513", 0.08)
+	slot_style.border_color = SoundGameTheme.INK
 	slot_style.set_border_width_all(1)
 	slot_style.set_corner_radius_all(0)
 	_drop_slot.add_theme_stylebox_override("panel", slot_style)
@@ -79,7 +79,7 @@ func _ready() -> void:
 	_track.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_track_host.add_child(_track)
 	_drop_marker = ColorRect.new()
-	_drop_marker.color = SoundGameTheme.GOLD
+	_drop_marker.color = SoundGameTheme.INK
 	_drop_marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_drop_marker.hide()
 	_track_host.add_child(_drop_marker)
