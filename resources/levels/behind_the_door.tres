@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="SoundLevelData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/level_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/clips/drips.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/clips/gasp.tres" id="3"]
+[ext_resource type="AudioStream" path="res://assets/audio/ambience.wav" id="4"]
+[ext_resource type="Script" path="res://scripts/data/audio_clip_data.gd" id="5"]
+
+[resource]
+script = ExtResource("1")
+title = "门后"
+subtitle = "维修走廊 / 一关机制原型"
+introduction = "她看不见门外。先试听两段声音，再改变它们出现的顺序。"
+clips = Array[ExtResource("5")]([ExtResource("2"), ExtResource("3")])
+initial_order = Array[String](["drips", "gasp"])
+correct_order = Array[String](["gasp", "drips"])
+slot_duration = 2.5
+duration = 9.0
+failure_time = 8.2
+stage_starts = PackedFloat32Array(0, 2.5, 5, 7)
+ambience = ExtResource("4")
+success_title = "平安离开"
+success_caption = "她先听见惊叫，再听见滴答，选择回撤求助，赶在卷闸落下前离开。"
+failure_title = "出口封闭"
+failure_caption = "她把惊叫理解为滑倒，继续向前，被落下的卷闸困住。改变声音顺序后再试一次。"

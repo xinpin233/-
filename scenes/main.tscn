@@ -1,0 +1,192 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/game_controller.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/levels/behind_the_door.tres" id="2"]
+[ext_resource type="Script" path="res://scripts/presentation/film_viewport.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/ui/audio_timeline.gd" id="4"]
+
+[node name="SoundEditingDesk" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+level = ExtResource("2")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 42
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 42
+theme_override_constants/margin_bottom = 20
+
+[node name="Content" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Header" type="HBoxContainer" parent="Margin/Content"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 62)
+
+[node name="Brand" type="VBoxContainer" parent="Margin/Content/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 0
+
+[node name="Title" type="Label" parent="Margin/Content/Header/Brand"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "声之行"
+
+[node name="Subtitle" type="Label" parent="Margin/Content/Header/Brand"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.71, 0.75, 1)
+theme_override_font_sizes/font_size = 13
+text = "JOURNEY OF SOUND    /    声音剪辑台"
+
+[node name="Chapter" type="Label" parent="Margin/Content/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 0.74, 0.48, 1)
+text = "01 / 门后"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="HeaderLine" type="HSeparator" parent="Margin/Content"]
+layout_mode = 2
+
+[node name="FilmHeader" type="HBoxContainer" parent="Margin/Content"]
+layout_mode = 2
+
+[node name="FilmLabel" type="Label" parent="Margin/Content/FilmHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.65, 0.71, 0.75, 1)
+theme_override_font_sizes/font_size = 14
+text = "01   /   放映窗口"
+
+[node name="Status" type="Label" parent="Margin/Content/FilmHeader"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 0.74, 0.48, 1)
+theme_override_font_sizes/font_size = 15
+text = "等待放映"
+
+[node name="Film" type="Control" parent="Margin/Content"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 285)
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+script = ExtResource("3")
+
+[node name="Story" type="VBoxContainer" parent="Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="StoryHeading" type="Label" parent="Margin/Content/Story"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "隔着磨砂门"
+
+[node name="Caption" type="Label" parent="Margin/Content/Story"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.71, 0.75, 1)
+theme_override_font_sizes/font_size = 17
+text = "隔着磨砂门，她只能听见门外的声音。"
+autowrap_mode = 2
+
+[node name="AudioHeader" type="HBoxContainer" parent="Margin/Content"]
+layout_mode = 2
+
+[node name="AudioLabel" type="Label" parent="Margin/Content/AudioHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 19
+text = "02   /   重排声音，改写她的判断"
+
+[node name="AudioHint" type="Label" parent="Margin/Content/AudioHeader"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.71, 0.75, 1)
+theme_override_font_sizes/font_size = 14
+text = "从上到下播放 · 画面不参与排序"
+
+[node name="AudioTimeline" type="VBoxContainer" parent="Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+script = ExtResource("4")
+
+[node name="PlaybackProgress" type="HBoxContainer" parent="Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Progress" type="ProgressBar" parent="Margin/Content/PlaybackProgress"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+mouse_filter = 2
+max_value = 9.0
+show_percentage = false
+
+[node name="TimeLabel" type="Label" parent="Margin/Content/PlaybackProgress"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.71, 0.75, 1)
+theme_override_font_sizes/font_size = 14
+text = "00.0 / 09.0 s"
+horizontal_alignment = 2
+
+[node name="Transport" type="HBoxContainer" parent="Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ResetButton" type="Button" parent="Margin/Content/Transport"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(145, 48)
+layout_mode = 2
+text = "恢复原序 [R]"
+
+[node name="StopButton" type="Button" parent="Margin/Content/Transport"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(135, 48)
+layout_mode = 2
+text = "停止 [Esc]"
+
+[node name="MuteButton" type="Button" parent="Margin/Content/Transport"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(155, 48)
+layout_mode = 2
+toggle_mode = true
+text = "声音：开 [M]"
+
+[node name="Spacer" type="Control" parent="Margin/Content/Transport"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PlayButton" type="Button" parent="Margin/Content/Transport"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(270, 48)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.94, 0.74, 0.48, 1)
+theme_override_colors/font_hover_color = Color(1, 0.85, 0.65, 1)
+text = "按此顺序放映 [空格]"
+
+[node name="Footer" type="Label" parent="Margin/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.71, 0.75, 1)
+theme_override_font_sizes/font_size = 14
+text = "拖动音频条或点击 ↑ ↓ 调整顺序 · 点击试听 · 放映中可暂停 · Tab 切换按钮"

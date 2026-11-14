@@ -1,0 +1,22 @@
+; Open with Godot 4.4 or newer, then press F5.
+config_version=5
+
+[application]
+config/name="声之行 · 声音剪辑台"
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.4", "GL Compatibility")
+config/icon="res://assets/icon.svg"
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=1000
+window/size/window_width_override=1152
+window/size/window_height_override=900
+window/size/min_width=960
+window/size/min_height=750
+window/stretch/mode="canvas_items"
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.047, 0.063, 0.082, 1)
