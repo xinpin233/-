@@ -32,11 +32,12 @@ func show_custom_scene(source: PackedScene) -> void:
 	clear_custom_scene()
 	if source != null:
 		custom_scene = source.instantiate()
-		if custom_scene is Node2D:
-			custom_scene.scale.y = 375.0 / 825.0
-		elif custom_scene is Control:
-			custom_scene.scale.y = 375.0 / 825.0
 		add_child(custom_scene)
+
+func content_size() -> Vector2:
+	if is_instance_valid(custom_scene):
+		return custom_scene.get_meta("canvas_size", Vector2(1100, 825))
+	return Vector2(1100, 375)
 
 func _process(_delta: float) -> void:
 	if is_instance_valid(custom_scene):

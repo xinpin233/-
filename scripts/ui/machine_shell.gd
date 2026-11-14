@@ -1,58 +1,43 @@
 extends Control
+## Paper desk, film perforations and read-only shot position indicators.
 
-var drawer: PanelContainer
-var slide := 0.0
 var desk: Control
+var active_stage := 0
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	desk = get_parent()
-	drawer = PanelContainer.new()
-	drawer.size = Vector2(266, 320)
-	drawer.z_index = 10
-	add_child(drawer)
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 18)
-	drawer.add_child(box)
-	var title := Label.new()
-	title.text = "声音素材"
-	box.add_child(title)
-	if desk.has_method("_populate_drawer"):
-		desk._populate_drawer(box)
-	else:
-		for clip in desk.level.clips:
-			var button := Button.new()
-			button.text = "▷   " + clip.title
-			button.tooltip_text = "试听素材"
-			button.pressed.connect(func() -> void:
-				var slot: int = desk.state.order.find(clip.id)
-				if slot >= 0:
-					desk._preview(slot)
-			)
-			box.add_child(button)
-	var tab := Label.new()
-	tab.text = "素\n材\n库\n\n›"
-	tab.position = Vector2(273, 78)
-	tab.size = Vector2(30, 170)
-	tab.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var handle := Node2D.new()
-	drawer.add_child(handle)
-	handle.add_child(tab)
+	desk.resized.connect(queue_redraw)
+	call_deferred("_connect_film")
 
-func _process(delta: float) -> void:
-	var mouse := get_local_mouse_position()
-	var target := 1.0 if Rect2(-238 + slide * 250, 110, 310, 340).has_point(mouse) else 0.0
-	slide = move_toward(slide, target, delta * 4.0)
-	drawer.position = Vector2(-238 + smoothstep(0.0, 1.0, slide) * 250, 120)
+func _connect_film() -> void:
+	desk.get_node("%Film").resized.connect(queue_redraw)
+	desk.get_node("%Film").item_rect_changed.connect(queue_redraw)
 	queue_redraw()
 
+func set_stage(value: int) -> void:
+	if active_stage != value:
+		active_stage = value
+		queue_redraw()
+
 func _draw() -> void:
-	var extent: Vector2 = desk.size
-	draw_rect(Rect2(Vector2.ZERO, extent), Color("#d8cdd9"))
+	if not is_instance_valid(desk): return
+	draw_rect(Rect2(Vector2.ZERO, desk.size), SoundGameTheme.PAPER)
 	var film: Control = desk.get_node("%Film")
-	var rect := film.get_global_rect().grow(12)
-	draw_rect(Rect2(rect.position + Vector2(10, 10), rect.size), Color("#a49aa6"))
-	draw_rect(rect, Color("#3b3540"))
-	var play: Control = desk.get_node("%PlayButton")
-	var button_rect := play.get_global_rect()
-	draw_rect(Rect2(button_rect.position + Vector2(5, 5), button_rect.size), Color("#3b3540"))
+	var rect := Rect2(film.global_position - desk.global_position, film.size)
+	var surround := Rect2(rect.position - Vector2(12, 40), rect.size + Vector2(24, 80))
+	draw_rect(Rect2(surround.position + Vector2(12, 12), surround.size), Color("aaa79e"))
+	draw_rect(surround, SoundGameTheme.INK)
+	var count := maxi(1, int(rect.size.x / 36.0))
+	for index in count:
+		var x := rect.position.x + 10 + index * ((rect.size.x - 28) / maxf(1, count - 1))
+		for y in [rect.position.y - 20, rect.end.y + 20]:
+			draw_rect(Rect2(x, y - 5, 16, 10), SoundGameTheme.PAPER)
+	var font := ThemeDB.fallback_font
+	var shot_count: int = desk.level.clips.size() if desk.level != null else 0
+	for index in shot_count:
+		var square := Rect2(surround.position.x - 88, surround.position.y + 48 + index * 62, 50, 50)
+		draw_rect(square, SoundGameTheme.RED if index == active_stage else SoundGameTheme.INK)
+		var numeral: String = ["I", "II", "III", "IV"][index]
+		var width := font.get_string_size(numeral, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x
+		draw_string(font, square.position + Vector2((50 - width) / 2, 31), numeral, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, SoundGameTheme.PAPER)

@@ -17,6 +17,8 @@ func _check(condition: bool, message: String) -> void:
 func _run() -> void:
 	capture = "--capture" in OS.get_cmdline_user_args()
 	game = load("res://scenes/main.tscn").instantiate()
+	# Keep this regression fixture independent from the current opening chapter.
+	game.level = load("res://resources/levels/behind_the_door.tres")
 	root.add_child(game)
 	await process_frame
 	await process_frame

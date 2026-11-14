@@ -5,9 +5,9 @@ extends Control
 signal preview_requested(slot: int)
 signal move_requested(source: int, target: int)
 
-const TRACK_INSET := Vector2(11, 14)
-const CLIP_HEIGHT := 84.0
-const CLIP_GAP := 7.0
+const TRACK_INSET := Vector2(0, 2)
+const CLIP_HEIGHT := 120.0
+const CLIP_GAP := 9.0
 const REFLOW_TIME := 0.16
 const LAND_TIME := 0.19
 const LIFT_HEIGHT := 10.0
@@ -21,7 +21,8 @@ var _track_host: Control
 var _drop_slot: Panel
 var _drop_marker: ColorRect
 var _playhead: ColorRect
-var _ruler: HBoxContainer
+var _playhead_elapsed := 0.0
+var _ruler: Control
 var _drag_layer: CanvasLayer
 var _drag_overlay: Control
 var _drag_source := -1
@@ -39,37 +40,36 @@ var _landing_tween: Tween
 var _reflow_tweens: Dictionary = {}
 
 func _ready() -> void:
-	custom_minimum_size = Vector2(0, 194)
+	custom_minimum_size = Vector2(0, 152)
 	add_theme_constant_override("separation", 7)
-	_ruler = HBoxContainer.new()
-	_ruler.hide()
+	_ruler = Control.new()
 	_ruler.custom_minimum_size.y = 18
 	_ruler.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_ruler)
 	_track_host = Control.new()
-	_track_host.custom_minimum_size.y = 184
+	_track_host.custom_minimum_size.y = 124
 	_track_host.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_track_host.clip_contents = true
+	_track_host.clip_contents = false
 	_track_host.position = Vector2(0, 25)
-	_track_host.size = Vector2(size.x, 184)
+	_track_host.size = Vector2(size.x, 124)
 	add_child(_track_host)
 	var rail := Panel.new()
 	rail.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	rail.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var rail_style := StyleBoxFlat.new()
-	rail_style.bg_color = Color("d8cdd9")
-	rail_style.border_color = Color("d8cdd9")
-	rail_style.set_border_width_all(1)
+	rail_style.bg_color = Color.TRANSPARENT
+	rail_style.border_color = Color("2c4651")
+	rail_style.set_border_width_all(0)
 	rail_style.set_corner_radius_all(4)
 	rail.add_theme_stylebox_override("panel", rail_style)
 	_track_host.add_child(rail)
 	_drop_slot = Panel.new()
 	_drop_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var slot_style := StyleBoxFlat.new()
-	slot_style.bg_color = Color("a99fb3", 0.35)
-	slot_style.border_color = Color("c8323a", 0.65)
+	slot_style.bg_color = Color("dc1c22", 0.08)
+	slot_style.border_color = SoundGameTheme.RED
 	slot_style.set_border_width_all(1)
-	slot_style.set_corner_radius_all(4)
+	slot_style.set_corner_radius_all(0)
 	_drop_slot.add_theme_stylebox_override("panel", slot_style)
 	_drop_slot.hide()
 	_track_host.add_child(_drop_slot)
@@ -86,7 +86,11 @@ func _ready() -> void:
 	_playhead = ColorRect.new()
 	_playhead.color = SoundGameTheme.GOLD
 	_playhead.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_playhead.hide()
+	_playhead.z_index = 4
+	var cap := Polygon2D.new()
+	cap.polygon = PackedVector2Array([Vector2(-7, -6), Vector2(9, -6), Vector2(1, 3)])
+	cap.color = SoundGameTheme.RED
+	_playhead.add_child(cap)
 	_track_host.add_child(_playhead)
 	# The lifted clip is outside the clipped rail, so its edges and shadow stay visible.
 	_drag_layer = CanvasLayer.new()
@@ -95,7 +99,7 @@ func _ready() -> void:
 	_drag_overlay = Control.new()
 	_drag_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_drag_layer.add_child(_drag_overlay)
-	_track_host.resized.connect(_position_overlays)
+	resized.connect(_position_overlays)
 
 func rebuild(level: SoundLevelData, order: Array[String]) -> void:
 	if not _committing_drop:
@@ -133,17 +137,16 @@ func rebuild(level: SoundLevelData, order: Array[String]) -> void:
 	_playhead.hide()
 	_position_overlays()
 
-func _build_ruler(count: int) -> void:
+func _build_ruler(_count: int) -> void:
 	for child in _ruler.get_children():
 		_ruler.remove_child(child)
 		child.queue_free()
-	for index in count + 1:
+	var seconds := ceili(_track_duration)
+	for index in seconds + 1:
 		var tick := Label.new()
-		tick.text = "%04.1f" % minf(index * _slot_duration, _track_duration)
-		tick.add_theme_font_size_override("font_size", 11)
+		tick.text = "│00:%02d" % index
+		tick.add_theme_font_size_override("font_size", 10)
 		tick.add_theme_color_override("font_color", SoundGameTheme.MUTED)
-		tick.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		tick.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT if index < count else HORIZONTAL_ALIGNMENT_RIGHT
 		tick.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_ruler.add_child(tick)
 
@@ -154,12 +157,17 @@ func set_locked(value: bool) -> void:
 		strip.set_locked(value)
 
 func update_playhead(elapsed: float, active_slot: int) -> void:
+	_playhead_elapsed = elapsed
 	for strip in strips:
 		strip.set_progress(clampf((elapsed - strip.slot * _slot_duration) / _slot_duration, 0.0, 1.0), strip.slot == active_slot)
-	_playhead.visible = elapsed > 0.0
+	_layout_playhead()
+
+func _layout_playhead() -> void:
+	_playhead.visible = true
 	var usable_width := maxf(0.0, _track_host.size.x - TRACK_INSET.x * 2)
-	_playhead.position = Vector2(TRACK_INSET.x + usable_width * clampf(elapsed / _track_duration, 0.0, 1.0), TRACK_INSET.y)
-	_playhead.size = Vector2(2, CLIP_HEIGHT)
+	_playhead.position = Vector2(TRACK_INSET.x + usable_width * clampf(_playhead_elapsed / _track_duration, 0.0, 1.0), TRACK_INSET.y)
+	_playhead.size = Vector2(2, CLIP_HEIGHT + 18)
+	_playhead.position.y = -14
 
 func set_preview(slot: int) -> void:
 	for strip in strips:
@@ -245,6 +253,7 @@ func _render_drag() -> void:
 	# Keep the original grip point under the pointer; only the lift eases in.
 	_drag_ghost.position = _drag_target_position + Vector2(0, -LIFT_HEIGHT * _lift_amount)
 	_drag_ghost.scale = Vector2.ONE * lerpf(1.0, 1.025, _lift_amount)
+	_drag_ghost.rotation = deg_to_rad(-1.5) * _lift_amount
 
 func _target_slot(center_x: float) -> int:
 	var stride := _clip_width + CLIP_GAP
@@ -270,6 +279,9 @@ func cancel_drag(animated: bool = true) -> void:
 		_land_drag(_drag_source)
 	else:
 		_clear_drag()
+
+func is_dragging() -> bool:
+	return _drag_source >= 0
 
 func _land_drag(target: int) -> void:
 	var source := _drag_source
@@ -297,6 +309,7 @@ func _land_drag(target: int) -> void:
 	_landing_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	_landing_tween.tween_property(_drag_ghost, "position", destination, LAND_TIME)
 	_landing_tween.tween_property(_drag_ghost, "scale", Vector2.ONE, LAND_TIME)
+	_landing_tween.tween_property(_drag_ghost, "rotation", 0.0, LAND_TIME)
 	_landing_tween.chain().tween_callback(_complete_landing)
 
 func _complete_landing() -> void:
@@ -366,13 +379,18 @@ func _position_drop_marker(target: int) -> void:
 func _position_overlays() -> void:
 	_ruler.position = Vector2.ZERO
 	_ruler.size = Vector2(size.x, 18)
+	for index in _ruler.get_child_count():
+		var tick: Control = _ruler.get_child(index)
+		tick.position = Vector2((size.x - 2) * index / maxf(1, _ruler.get_child_count() - 1), 0)
+		if index == _ruler.get_child_count() - 1: tick.position.x -= 36
 	_track_host.position = Vector2(0, 25)
-	_track_host.size = Vector2(size.x, maxf(140.0, size.y - 25.0))
+	_track_host.size = Vector2(size.x, CLIP_HEIGHT + 4)
 	if _drag_source >= 0:
 		cancel_drag(false)
 	var available := maxf(140.0, _track_host.size.x - TRACK_INSET.x * 2)
 	_clip_width = maxf(140.0, (available - maxf(0, strips.size() - 1) * CLIP_GAP) / maxf(1, strips.size()))
 	_track.size = Vector2(available, CLIP_HEIGHT)
+	_layout_playhead()
 	for strip in strips:
 		strip.custom_minimum_size = Vector2(_clip_width, CLIP_HEIGHT)
 		strip.size = strip.custom_minimum_size

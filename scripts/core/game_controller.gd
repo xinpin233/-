@@ -22,6 +22,15 @@ var _preview_slot: int = -1
 
 func _ready() -> void:
 	theme = SoundGameTheme.create()
+	var title_font := SystemFont.new()
+	title_font.font_names = PackedStringArray(["Arial", "Microsoft YaHei UI"])
+	title_font.font_weight = 800
+	$Margin/Content/Header/Reel.add_theme_font_override("font", title_font)
+	for style in ["normal", "hover", "pressed"]:
+		var fill := SoundGameTheme.RED if style == "normal" else Color("b9161c")
+		play_button.add_theme_stylebox_override(style, SoundGameTheme.button_style(fill))
+	for color_name in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		play_button.add_theme_color_override(color_name, Color.WHITE)
 	if level == null:
 		_show_error("没有配置关卡资源。")
 		return
@@ -48,6 +57,8 @@ func _ready() -> void:
 	film.media_warning.connect(func(message: String) -> void: push_warning(message))
 
 	progress.max_value = level.duration
+	%Chapter.text = "序 幕  ·  " + level.title
+	%Location.text = "场景 / " + level.title
 	_reset()
 	if level.autoplay:
 		_play_or_pause.call_deferred()
@@ -72,7 +83,8 @@ func _reset_presentation() -> void:
 	film.reset(level.opening_scene)
 	_active_slot = -1
 	progress.value = 0
-	time_label.text = "00.0 / %04.1f s" % level.duration
+	time_label.text = "● REEL 01  /  00:00"
+	$MachineShell.set_stage(0)
 	caption.text = ""
 	status.hide()
 	status.add_theme_color_override("font_color", SoundGameTheme.GOLD)
@@ -142,7 +154,7 @@ func _stop() -> void:
 
 func _toggle_mute() -> void:
 	audio.set_muted(not audio.muted)
-	mute_button.text = "取消静音 [M]" if audio.muted else "声音：开 [M]"
+	mute_button.text = "静音" if audio.muted else "声音"
 	mute_button.button_pressed = audio.muted
 
 func _on_transition(stage: int, fraction: float) -> void:
@@ -153,7 +165,8 @@ func _on_frame(elapsed: float, stage: int, fraction: float) -> void:
 	film.update_frame(elapsed, stage, fraction, level)
 	caption.text = ""
 	progress.value = elapsed
-	time_label.text = "%04.1f / %04.1f s" % [elapsed, level.duration]
+	time_label.text = "● REEL 01  /  00:%02d" % int(elapsed)
+	$MachineShell.set_stage(stage)
 	timeline.update_playhead(elapsed, _active_slot)
 
 func _on_completed(success: bool) -> void:
@@ -180,11 +193,11 @@ func _refresh_controls() -> void:
 	reset_button.disabled = locked
 	match state.phase:
 		SoundRunState.Phase.PLAYING:
-			play_button.text = "暂停"
+			play_button.text = "暂 停  Ⅱ"
 		SoundRunState.Phase.PAUSED:
-			play_button.text = "继续放映"
+			play_button.text = "继 续  ▶"
 		_:
-			play_button.text = "放映"
+			play_button.text = "放 映  ▶"
 
 func _input(event: InputEvent) -> void:
 	if playback == null or not event is InputEventKey or not event.pressed or event.echo:
@@ -196,7 +209,10 @@ func _input(event: InputEvent) -> void:
 		KEY_SPACE:
 			_play_or_pause()
 		KEY_ESCAPE:
-			_stop()
+			if timeline.is_dragging():
+				timeline.cancel_drag()
+			else:
+				_stop()
 		KEY_R:
 			if state.can_edit():
 				_reset()

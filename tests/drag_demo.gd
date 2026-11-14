@@ -19,6 +19,8 @@ func _initialize() -> void:
 func _run() -> void:
 	DirAccess.make_dir_recursive_absolute("res://artifacts/drag_motion/frames")
 	game = load("res://scenes/main.tscn").instantiate()
+	game.level = game.level.duplicate()
+	game.level.autoplay = false
 	root.add_child(game)
 	await process_frame
 	await process_frame
@@ -93,7 +95,7 @@ func _frame() -> void:
 	if frame_index % 2 == 0:
 		var screenshot := root.get_texture().get_image()
 		var ratio := Vector2(screenshot.get_size()) / root.get_visible_rect().size
-		var top: float = game.get_node("Margin/Content/AudioHeader").global_position.y - 10
+		var top: float = game.timeline.global_position.y - 36
 		var bottom: float = game.timeline._track_host.get_global_rect().end.y + 16
 		var crop := Rect2i(Vector2(24, top) * ratio, Vector2(root.get_visible_rect().size.x - 48, bottom - top) * ratio)
 		screenshot.get_region(crop).save_png("res://artifacts/drag_motion/frames/frame_%04d.png" % captured)

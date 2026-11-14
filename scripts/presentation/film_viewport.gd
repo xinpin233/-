@@ -5,6 +5,7 @@ extends Control
 signal media_warning(message: String)
 
 var _rail := Control.new()
+var _aperture := Control.new()
 var _video := VideoStreamPlayer.new()
 var _frames: Array[SoundComicFrame] = []
 var _rail_offset: float = 0.0
@@ -12,7 +13,15 @@ var _rail_offset: float = 0.0
 func _ready() -> void:
 	clip_contents = true
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_rail)
+	var matte := ColorRect.new()
+	matte.color = Color("252326")
+	matte.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(matte)
+	matte.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_aperture.clip_contents = true
+	_aperture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_aperture)
+	_aperture.add_child(_rail)
 	for index in 4:
 		var frame := SoundComicFrame.new()
 		frame.stage = index
@@ -61,6 +70,7 @@ func start_route(level: SoundLevelData, safe: bool, order: Array[String]) -> voi
 			"alarm": frame.end_x = 194.0 if safe else 815.0
 		previous_x = frame.end_x
 		frame.queue_redraw()
+	_fit()
 	var path := level.success_video if safe else level.failure_video
 	if path.is_empty():
 		return
@@ -101,5 +111,21 @@ func freeze() -> void:
 	_video.paused = true
 
 func _fit() -> void:
-	_rail.scale = Vector2(size.x / 1100.0, size.y / 375.0)
-	_rail.position = Vector2(_rail_offset * _rail.scale.x, 0)
+	var index := clampi(roundi(-_rail_offset / 1120.0), 0, maxi(0, _frames.size() - 1))
+	var source_size := _frames[index].content_size() if not _frames.is_empty() else Vector2(1100, 375)
+	var factor := minf(size.x / source_size.x, size.y / source_size.y)
+	_aperture.size = source_size * factor
+	_aperture.position = (size - _aperture.size) * 0.5
+	_rail.scale = Vector2.ONE * factor
+	_rail.position = Vector2(_rail_offset * factor, 0)
+	# Keep neighbouring shots from appearing in the side mattes.
+	for frame in _frames:
+		frame.visible = absf(frame.stage + _rail_offset / 1120.0) < 1.0
+	if _video.stream != null:
+		var texture := _video.get_video_texture()
+		if texture != null and texture.get_width() > 0 and texture.get_height() > 0:
+			var native := texture.get_size()
+			var video_factor := minf(size.x / native.x, size.y / native.y)
+			_video.set_anchors_preset(Control.PRESET_TOP_LEFT)
+			_video.size = native * video_factor
+			_video.position = (size - _video.size) * 0.5
