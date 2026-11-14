@@ -37,6 +37,7 @@ func reset(opening_scene: PackedScene = null) -> void:
 	_rail.show()
 	_rail_offset = 0.0
 	for frame in _frames:
+		frame.media_active = false
 		frame.progress = 0.0
 		frame.safe_route = false
 		frame.first_cue = 0
@@ -49,10 +50,24 @@ func reset(opening_scene: PackedScene = null) -> void:
 func start_route(level: SoundLevelData, safe: bool, order: Array[String]) -> void:
 	reset()
 	var previous_x := 290.0
+	var previous_shot := level.opening_scene
+	var shots := level.success_shots if safe else level.failure_shots
 	for frame in _frames.slice(0, order.size()):
 		frame.safe_route = safe
 		frame.first_cue = 1 if order[0] == "gasp" else 0
 		frame.configure_clip(level.find_clip(order[frame.stage]), level.slot_duration)
+		if level.follow_clip_shots:
+			if frame.stage == 0:
+				frame.show_custom_scene(level.opening_scene)
+			else:
+				var shot_slot := level.initial_order.find(order[frame.stage])
+				if shot_slot == 0:
+					frame.show_custom_scene(shots[0] if safe and shots.size() > 0 else previous_shot)
+				elif shot_slot > 0 and shot_slot < shots.size():
+					previous_shot = shots[shot_slot]
+					frame.show_custom_scene(previous_shot)
+		elif frame.stage < shots.size():
+			frame.show_custom_scene(shots[frame.stage])
 		frame.start_x = previous_x
 		match order[frame.stage]:
 			"drips": frame.end_x = 405.0
@@ -80,6 +95,7 @@ func update_frame(elapsed: float, stage: int, progress: float, level: SoundLevel
 	if stage < 0 or stage >= _frames.size():
 		return
 	_frames[stage].progress = progress
+	_frames[stage].media_active = true
 	_frames[stage].queue_redraw()
 	_video.paused = false
 	_rail_offset = -1120.0 * stage
@@ -87,6 +103,7 @@ func update_frame(elapsed: float, stage: int, progress: float, level: SoundLevel
 
 func update_transition(stage: int, fraction: float) -> void:
 	_video.paused = true
+	_frames[stage - 1].media_active = false
 	_frames[stage - 1].progress = 1.0
 	_frames[stage - 1].queue_redraw()
 	_frames[stage].progress = 0.0
@@ -96,9 +113,12 @@ func update_transition(stage: int, fraction: float) -> void:
 
 func set_paused(value: bool) -> void:
 	_video.paused = value
+	var stage := clampi(roundi(-_rail_offset / 1120.0), 0, _frames.size() - 1)
+	if value:
+		_frames[stage].media_active = false
 
 func freeze() -> void:
-	_video.paused = true
+	set_paused(true)
 
 func _fit() -> void:
 	_rail.scale = Vector2(size.x / 1100.0, size.y / 375.0)

@@ -13,6 +13,7 @@ const LAND_TIME := 0.19
 const LIFT_HEIGHT := 10.0
 
 var strips: Array[SoundAudioStrip] = []
+var _first_movable_slot := 0
 var _slot_duration := 2.5
 var _track_duration := 5.0
 var _clip_width := 292.0
@@ -98,6 +99,7 @@ func _ready() -> void:
 	_track_host.resized.connect(_position_overlays)
 
 func rebuild(level: SoundLevelData, order: Array[String]) -> void:
+	_first_movable_slot = 1 if level.lock_first_clip else 0
 	if not _committing_drop:
 		_clear_drag()
 	_slot_duration = level.slot_duration
@@ -151,7 +153,7 @@ func set_locked(value: bool) -> void:
 	if value:
 		_clear_drag()
 	for strip in strips:
-		strip.set_locked(value)
+		strip.set_locked(value or strip.slot < _first_movable_slot)
 
 func update_playhead(elapsed: float, active_slot: int) -> void:
 	for strip in strips:
@@ -166,7 +168,7 @@ func set_preview(slot: int) -> void:
 		strip.set_previewing(strip.slot == slot)
 
 func _begin_drag(strip: SoundAudioStrip, global_position: Vector2) -> void:
-	if strip.locked or _drag_source >= 0:
+	if strip.locked or strip.slot < _first_movable_slot or _drag_source >= 0:
 		return
 	# Finish a previous landing before accepting a rapid second grab.
 	var grip := strip.drag_grab_position(global_position)
@@ -249,7 +251,7 @@ func _render_drag() -> void:
 func _target_slot(center_x: float) -> int:
 	var stride := _clip_width + CLIP_GAP
 	var relative_center := center_x - TRACK_INSET.x - _clip_width * 0.5
-	var candidate := clampi(roundi(relative_center / stride), 0, strips.size() - 1)
+	var candidate := clampi(roundi(relative_center / stride), _first_movable_slot, strips.size() - 1)
 	# A small dead band keeps a clip from shuffling back and forth on a boundary.
 	if candidate != _drag_target and absi(candidate - _drag_target) == 1:
 		var boundary := (float(candidate + _drag_target) * 0.5) * stride

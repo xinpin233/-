@@ -80,6 +80,8 @@ func _reset_presentation() -> void:
 	_refresh_controls()
 
 func _move_clip(source: int, target: int) -> void:
+	if level.lock_first_clip and (source == 0 or target == 0):
+		return
 	if not state.can_edit() or source == target or source < 0 or target < 0 or source >= state.order.size() or target >= state.order.size():
 		return
 	audio.stop_all()
