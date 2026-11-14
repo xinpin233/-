@@ -1,5 +1,6 @@
 .godot/
 builds/
 artifacts/
+mayi-vdieo-game/
 *.tmp
 *.log
