@@ -1,0 +1,16 @@
+[
+  {
+    "name": "场景背景",
+    "file": "background.png",
+    "visible": true,
+    "x": 0,
+    "y": 0
+  },
+  {
+    "name": "背面",
+    "file": "layer_16.png",
+    "visible": true,
+    "x": 761,
+    "y": 581
+  }
+]

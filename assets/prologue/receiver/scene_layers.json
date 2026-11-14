@@ -1,0 +1,30 @@
+[
+  {
+    "name": "场景背景",
+    "file": "background.png",
+    "visible": true,
+    "x": 0,
+    "y": 0
+  },
+  {
+    "name": "拿电话的人",
+    "file": "layer_15.png",
+    "visible": true,
+    "x": 736,
+    "y": 533
+  },
+  {
+    "name": "拿起的电话",
+    "file": "layer_16.png",
+    "visible": true,
+    "x": 778,
+    "y": 561
+  },
+  {
+    "name": "背面",
+    "file": "layer_17.png",
+    "visible": true,
+    "x": 761,
+    "y": 581
+  }
+]

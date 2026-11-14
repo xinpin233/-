@@ -1,0 +1,31 @@
+[gd_scene load_steps=5 format=3]
+[ext_resource type="Texture2D" path="res://assets/prologue/receiver/background.png" id="1"]
+[ext_resource type="Texture2D" path="res://assets/prologue/receiver/layer_15.png" id="2"]
+[ext_resource type="Texture2D" path="res://assets/prologue/receiver/layer_16.png" id="3"]
+[ext_resource type="Texture2D" path="res://assets/prologue/receiver/layer_17.png" id="4"]
+
+[node name="phone_receiver" type="Node2D"]
+
+[node name="Layer0" type="Sprite2D" parent="."]
+position = Vector2(0.0, 0.0)
+scale = Vector2(0.6875, 0.6875)
+texture = ExtResource("1")
+centered = false
+
+[node name="Layer1" type="Sprite2D" parent="."]
+position = Vector2(506.0, 366.4375)
+scale = Vector2(0.6875, 0.6875)
+texture = ExtResource("2")
+centered = false
+
+[node name="Layer2" type="Sprite2D" parent="."]
+position = Vector2(534.875, 385.6875)
+scale = Vector2(0.6875, 0.6875)
+texture = ExtResource("3")
+centered = false
+
+[node name="Layer3" type="Sprite2D" parent="."]
+position = Vector2(523.1875, 399.4375)
+scale = Vector2(0.6875, 0.6875)
+texture = ExtResource("4")
+centered = false

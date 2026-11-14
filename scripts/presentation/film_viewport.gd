@@ -30,7 +30,7 @@ func _ready() -> void:
 	resized.connect(_fit)
 	_fit()
 
-func reset() -> void:
+func reset(opening_scene: PackedScene = null) -> void:
 	_video.stop()
 	_video.paused = false
 	_video.hide()
@@ -40,13 +40,16 @@ func reset() -> void:
 		frame.progress = 0.0
 		frame.safe_route = false
 		frame.first_cue = 0
+		frame.clear_custom_scene()
 		frame.queue_redraw()
+	if opening_scene != null:
+		_frames[0].show_custom_scene(opening_scene)
 	_fit()
 
 func start_route(level: SoundLevelData, safe: bool, order: Array[String]) -> void:
 	reset()
 	var previous_x := 290.0
-	for frame in _frames:
+	for frame in _frames.slice(0, order.size()):
 		frame.safe_route = safe
 		frame.first_cue = 1 if order[0] == "gasp" else 0
 		frame.configure_clip(level.find_clip(order[frame.stage]), level.slot_duration)

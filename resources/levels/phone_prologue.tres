@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="SoundLevelData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/level_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/audio_clip_data.gd" id="2"]
+[ext_resource type="Resource" path="res://resources/clips/coin.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/clips/dial.tres" id="4"]
+[ext_resource type="Resource" path="res://resources/clips/phone_feedback.tres" id="5"]
+[ext_resource type="PackedScene" path="res://scenes/phone_wide.tscn" id="6"]
+[ext_resource type="PackedScene" path="res://scenes/phone_title.tscn" id="7"]
+
+[resource]
+script = ExtResource("1")
+title = "电话亭"
+clips = Array[ExtResource("2")]([ExtResource("3"), ExtResource("4"), ExtResource("5")])
+initial_order = Array[String](["dial", "coin", "phone_feedback"])
+correct_order = Array[String](["coin", "dial", "phone_feedback"])
+slot_duration = 3.0
+duration = 9.0
+failure_time = 9.0
+stage_starts = PackedFloat32Array(0, 3, 6)
+opening_scene = ExtResource("6")
+ending_scene = ExtResource("7")
+autoplay = true

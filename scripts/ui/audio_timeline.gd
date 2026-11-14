@@ -42,6 +42,7 @@ func _ready() -> void:
 	custom_minimum_size = Vector2(0, 194)
 	add_theme_constant_override("separation", 7)
 	_ruler = HBoxContainer.new()
+	_ruler.hide()
 	_ruler.custom_minimum_size.y = 18
 	_ruler.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_ruler)
@@ -56,8 +57,8 @@ func _ready() -> void:
 	rail.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	rail.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var rail_style := StyleBoxFlat.new()
-	rail_style.bg_color = Color("0a171e")
-	rail_style.border_color = Color("2c4651")
+	rail_style.bg_color = Color("d8cdd9")
+	rail_style.border_color = Color("d8cdd9")
 	rail_style.set_border_width_all(1)
 	rail_style.set_corner_radius_all(4)
 	rail.add_theme_stylebox_override("panel", rail_style)
@@ -65,8 +66,8 @@ func _ready() -> void:
 	_drop_slot = Panel.new()
 	_drop_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var slot_style := StyleBoxFlat.new()
-	slot_style.bg_color = Color("182e41", 0.55)
-	slot_style.border_color = Color("7794ac", 0.65)
+	slot_style.bg_color = Color("a99fb3", 0.35)
+	slot_style.border_color = Color("c8323a", 0.65)
 	slot_style.set_border_width_all(1)
 	slot_style.set_corner_radius_all(4)
 	_drop_slot.add_theme_stylebox_override("panel", slot_style)

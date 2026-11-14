@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3]
+[ext_resource type="Texture2D" path="res://assets/prologue/wide/background.png" id="1"]
+[ext_resource type="Texture2D" path="res://assets/prologue/wide/layer_16.png" id="2"]
+
+[node name="phone_wide" type="Node2D"]
+
+[node name="Layer0" type="Sprite2D" parent="."]
+position = Vector2(0.0, 0.0)
+scale = Vector2(0.6875, 0.6875)
+texture = ExtResource("1")
+centered = false
+
+[node name="Layer1" type="Sprite2D" parent="."]
+position = Vector2(523.1875, 399.4375)
+scale = Vector2(0.6875, 0.6875)
+texture = ExtResource("2")
+centered = false

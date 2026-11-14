@@ -49,6 +49,8 @@ func _ready() -> void:
 
 	progress.max_value = level.duration
 	_reset()
+	if level.autoplay:
+		_play_or_pause.call_deferred()
 
 func _show_error(message: String) -> void:
 	status.show()
@@ -67,7 +69,7 @@ func _reset() -> void:
 	_reset_presentation()
 
 func _reset_presentation() -> void:
-	film.reset()
+	film.reset(level.opening_scene)
 	_active_slot = -1
 	progress.value = 0
 	time_label.text = "00.0 / %04.1f s" % level.duration
@@ -155,6 +157,13 @@ func _on_frame(elapsed: float, stage: int, fraction: float) -> void:
 	timeline.update_playhead(elapsed, _active_slot)
 
 func _on_completed(success: bool) -> void:
+	if success and level.ending_scene != null:
+		get_tree().change_scene_to_packed.call_deferred(level.ending_scene)
+		return
+	if not success and level.autoplay:
+		state.phase = SoundRunState.Phase.FAILED
+		_reset_presentation()
+		return
 	state.phase = SoundRunState.Phase.SUCCEEDED if success else SoundRunState.Phase.FAILED
 	film.freeze()
 	status.hide()

@@ -6,6 +6,7 @@ extends Resource
 @export var title: String = ""
 @export var description: String = ""
 @export var stream: AudioStream
+@export var failure_stream: AudioStream
 @export var tint: Color = Color("8bd0bf")
 @export var waveform: PackedFloat32Array = PackedFloat32Array()
 

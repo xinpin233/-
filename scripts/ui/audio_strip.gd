@@ -61,7 +61,7 @@ func setup(data: AudioClipData, index: int, count: int, owner_id: int = 0) -> vo
 	waveform.size = Vector2(0, 32)
 	waveform.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	waveform.peaks = clip.waveform
-	waveform.tint = Color("c9dcff")
+	waveform.tint = Color("61586a")
 	waveform.accent = clip.tint
 	surface.add_child(waveform)
 
@@ -100,27 +100,29 @@ func setup(data: AudioClipData, index: int, count: int, owner_id: int = 0) -> vo
 	down_button.visible = false
 	down_button.pressed.connect(func() -> void: move_requested.emit(slot, slot + 1))
 	surface.add_child(down_button)
+	for item in [top_bar, _slot_label, _title_label, _time_label, _sub_label]:
+		item.hide()
 	set_slot_duration(2.5)
 	set_locked(false)
 
 func _layout_surface(surface: Control, top_bar: ColorRect, wave: SoundWaveformView, sub_label: Label) -> void:
 	top_bar.size = Vector2(surface.size.x, 23)
-	wave.position = Vector2(4, 25)
-	wave.size = Vector2(maxf(1.0, surface.size.x - 8.0), maxf(1.0, surface.size.y - 49.0))
+	wave.position = Vector2(8, 10)
+	wave.size = Vector2(maxf(1.0, surface.size.x - 16.0), maxf(1.0, surface.size.y - 20.0))
 	sub_label.position = Vector2(8, maxf(25.0, surface.size.y - 22.0))
 	sub_label.size = Vector2(maxf(1.0, surface.size.x - 16.0), 18)
 
 func _panel_style(selected: bool) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
-	box.bg_color = Color("345a91") if selected else Color("294a78")
-	box.border_color = Color("f4f0e6") if selected else Color("6e8fbd")
+	box.bg_color = clip.tint.lightened(0.08) if selected else clip.tint
+	box.border_color = Color("c8323a") if selected else clip.tint
 	box.set_border_width_all(2 if selected else 1)
-	box.set_corner_radius_all(4)
+	box.set_corner_radius_all(0)
 	box.shadow_color = Color(0, 0, 0, 0.42) if selected else Color(0, 0, 0, 0.20)
-	box.shadow_size = 9 if selected else 3
+	box.shadow_size = 0
 	if _lifted:
-		box.shadow_color = Color(0, 0, 0, 0.55)
-		box.shadow_size = 18
+		box.shadow_color = Color("3b3540")
+		box.shadow_size = 0
 		box.shadow_offset = Vector2(0, 8)
 	box.content_margin_left = 4
 	box.content_margin_right = 4

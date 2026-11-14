@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AudioClipData" load_steps=4 format=3]
+[ext_resource type="Script" path="res://scripts/data/audio_clip_data.gd" id="1"]
+[ext_resource type="AudioStream" path="res://assets/prologue/audio/dial_keys.wav" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/phone_dial.tscn" id="3"]
+
+[resource]
+script = ExtResource("1")
+id = "dial"
+title = "拨号"
+stream = ExtResource("2")
+tint = Color(0.65, 0.62, 0.71, 1)
+waveform = PackedFloat32Array(0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000)
+calm_scene = ExtResource("3")
+alarmed_scene = ExtResource("3")

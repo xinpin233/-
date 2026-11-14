@@ -1,0 +1,121 @@
+[
+  {
+    "name": "背景",
+    "file": "layer_00.png",
+    "visible": true,
+    "x": 0,
+    "y": 0
+  },
+  {
+    "name": "图层1",
+    "file": "layer_01.png",
+    "visible": true,
+    "x": 0,
+    "y": 0
+  },
+  {
+    "name": "云",
+    "file": "layer_02.png",
+    "visible": true,
+    "x": 0,
+    "y": 0
+  },
+  {
+    "name": "投影",
+    "file": "layer_03.png",
+    "visible": true,
+    "x": 0,
+    "y": 626
+  },
+  {
+    "name": "栅栏",
+    "file": "layer_04.png",
+    "visible": true,
+    "x": 0,
+    "y": 626
+  },
+  {
+    "name": "图层10",
+    "file": "layer_05.png",
+    "visible": true,
+    "x": 848,
+    "y": 542
+  },
+  {
+    "name": "灯",
+    "file": "layer_06.png",
+    "visible": true,
+    "x": 252,
+    "y": 171
+  },
+  {
+    "name": "图层9",
+    "file": "layer_07.png",
+    "visible": true,
+    "x": 230,
+    "y": 220
+  },
+  {
+    "name": "电话亭",
+    "file": "layer_08.png",
+    "visible": true,
+    "x": 719,
+    "y": 447
+  },
+  {
+    "name": "图层6",
+    "file": "layer_09.png",
+    "visible": true,
+    "x": 641,
+    "y": 451
+  },
+  {
+    "name": "电话",
+    "file": "layer_10.png",
+    "visible": true,
+    "x": 765,
+    "y": 456
+  },
+  {
+    "name": "按钮和电话",
+    "file": "layer_11.png",
+    "visible": false,
+    "x": 773,
+    "y": 456
+  },
+  {
+    "name": "电话线",
+    "file": "layer_12.png",
+    "visible": true,
+    "x": 785,
+    "y": 600
+  },
+  {
+    "name": "图层16",
+    "file": "layer_14.png",
+    "visible": true,
+    "x": 748,
+    "y": 564
+  },
+  {
+    "name": "拿电话的人",
+    "file": "layer_15.png",
+    "visible": true,
+    "x": 736,
+    "y": 533
+  },
+  {
+    "name": "拿起的电话",
+    "file": "layer_16.png",
+    "visible": true,
+    "x": 778,
+    "y": 561
+  },
+  {
+    "name": "背面",
+    "file": "layer_17.png",
+    "visible": true,
+    "x": 761,
+    "y": 581
+  }
+]

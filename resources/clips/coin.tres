@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AudioClipData" load_steps=4 format=3]
+[ext_resource type="Script" path="res://scripts/data/audio_clip_data.gd" id="1"]
+[ext_resource type="AudioStream" path="res://assets/prologue/audio/01_coin_receiver.wav" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/phone_wide.tscn" id="3"]
+
+[resource]
+script = ExtResource("1")
+id = "coin"
+title = "投币"
+stream = ExtResource("2")
+tint = Color(0.64, 0.70, 0.60, 1)
+waveform = PackedFloat32Array(0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.4467, 0.2672, 0.0494, 0.4149, 0.6489, 1.0000, 0.0973, 0.0465, 0.0229, 0.0035, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000)
+calm_scene = ExtResource("3")
+alarmed_scene = ExtResource("3")

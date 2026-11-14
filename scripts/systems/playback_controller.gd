@@ -95,7 +95,11 @@ func _publish_frame() -> void:
 	if slot != _active_slot:
 		_active_slot = slot
 		if slot >= 0:
-			audio.play_cue(level.find_clip(_order[slot]))
+			var clip := level.find_clip(_order[slot])
+			if not route_success and clip.failure_stream != null:
+				clip = clip.duplicate() as AudioClipData
+				clip.stream = clip.failure_stream
+			audio.play_cue(clip)
 		else:
 			audio.cue.stop()
 		cue_changed.emit(slot)

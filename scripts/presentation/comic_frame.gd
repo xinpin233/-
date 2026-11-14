@@ -1,7 +1,7 @@
 class_name SoundComicFrame
 extends Control
 
-const EDGE = Color("#111923")
+const EDGE = Color("#3b3540")
 const DARK = Color("#202c39")
 const LINE = Color("#53616b")
 const GOLD = Color("#e9ae6a")
@@ -20,11 +20,16 @@ var clip_duration := 3.0
 func configure_clip(clip: AudioClipData, duration: float) -> void:
 	clip_id = clip.id
 	clip_duration = duration
+	show_custom_scene(clip.alarmed_scene if safe_route else clip.calm_scene)
+
+func clear_custom_scene() -> void:
 	if is_instance_valid(custom_scene):
 		remove_child(custom_scene)
 		custom_scene.queue_free()
 	custom_scene = null
-	var source := clip.alarmed_scene if safe_route else clip.calm_scene
+
+func show_custom_scene(source: PackedScene) -> void:
+	clear_custom_scene()
 	if source != null:
 		custom_scene = source.instantiate()
 		if custom_scene is Node2D:
@@ -93,8 +98,8 @@ func _draw() -> void:
 	draw_set_transform(Vector2.ZERO)
 	for i in 27:
 		var x := 12.0 + i * 41
-		draw_rect(Rect2(x, 6, 22, 7), LINE.darkened(0.4))
-		draw_rect(Rect2(x, 362, 22, 7), LINE.darkened(0.4))
+		draw_rect(Rect2(x, 6, 22, 7), Color("#d8cdd9"))
+		draw_rect(Rect2(x, 362, 22, 7), Color("#d8cdd9"))
 	draw_rect(Rect2(0, 0, 1100, 375), LINE, false, 2.0)
 
 func draw_shutter(accent: Color) -> void:
