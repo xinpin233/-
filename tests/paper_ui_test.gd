@@ -87,6 +87,21 @@ func _run() -> void:
 	check(game.timeline._drag_ghost == null, "Starting playback clears an active drag")
 	game._stop()
 	await _mouse(start, false, false)
+	# A fast horizontal grab may cross a slot in the very first motion event.
+	game._reset()
+	await process_frame
+	start = game.timeline.strips[0].global_position + grip
+	target = game.timeline._track.global_position + game.timeline._slot_position(1) + grip
+	await _mouse(start, false, true)
+	await _mouse(target, true, true)
+	var neighbour: Control = game.timeline.strips[1]
+	check(game.timeline._drag_ghost != null, "Fast horizontal grab creates drag overlay")
+	check(neighbour.position.x > game.timeline._slot_position(0).x + 1, "First motion crossing a slot animates instead of snapping")
+	await create_timer(0.20).timeout
+	await _mouse(target, false, false)
+	check(game.timeline._drag_ghost != null and game.timeline._settling, "Release retains the overlay for landing animation")
+	await create_timer(0.25).timeout
+	check(game.state.order == game.level.correct_order, "Fast horizontal drag commits the correct order")
 	for resolution in [Vector2i(1000, 700), Vector2i(1920, 1080), Vector2i(1424, 900)]:
 		root.size = resolution
 		await process_frame

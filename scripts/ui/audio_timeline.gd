@@ -200,8 +200,9 @@ func _begin_drag(strip: SoundAudioStrip, global_position: Vector2) -> void:
 	_lift_tween = create_tween()
 	_lift_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	_lift_tween.tween_property(self, "_lift_amount", 1.0, 0.11)
+	# The first pointer motion can already cross a slot. Preserve the reflow
+	# started by _update_drag instead of immediately snapping its neighbours.
 	_update_drag(global_position)
-	_layout_strips(false)
 
 func _process(_delta: float) -> void:
 	if _drag_source >= 0:
