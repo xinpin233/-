@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+[ext_resource type="Texture2D" path="res://assets/reel2/video/parked.png" id="1"]
+[node name="Parked" type="Node2D"]
+metadata/canvas_size = Vector2(1100, 618.75)
+[node name="Still" type="TextureRect" parent="."]
+offset_right = 1100.0
+offset_bottom = 618.75
+texture = ExtResource("1")
+expand_mode = 1
+stretch_mode = 5
+mouse_filter = 2

@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="SoundLevelData" load_steps=8 format=3]
+[ext_resource type="Script" path="res://scripts/data/level_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/data/audio_clip_data.gd" id="2"]
+[ext_resource type="Resource" path="res://resources/clips/reel2_ring.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/clips/reel2_engine.tres" id="4"]
+[ext_resource type="Resource" path="res://resources/clips/reel2_brake.tres" id="5"]
+[ext_resource type="Resource" path="res://resources/clips/reel2_drive.tres" id="6"]
+[ext_resource type="PackedScene" path="res://scenes/reel2/phone.tscn" id="7"]
+[resource]
+script = ExtResource("1")
+reel_number = 2
+next_reel_number = 3
+title = "追车"
+clips = Array[ExtResource("2")]([ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6")])
+initial_order = Array[String](["reel2_ring", "reel2_engine", "reel2_brake", "reel2_drive"])
+correct_order = Array[String](["reel2_ring", "reel2_brake", "reel2_engine", "reel2_drive"])
+slot_duration = 5.0
+shot_speed = 1.0
+shot_hold = 0.0
+transition_duration = 0.22
+duration = 20.0
+failure_time = 20.0
+stage_starts = PackedFloat32Array(0, 5, 10, 15)
+opening_scene = ExtResource("7")
+lock_first_clip = true
+lock_last_clip = false
+use_chase_rules = true
+success_title = "平稳驶离"
+failure_title = "撞上了"
+failure_caption = "尚未安全驶离大桥。调整后三段音频的顺序再试一次。"

@@ -1,0 +1,8 @@
+[gd_scene format=3]
+[node name="Black" type="Node2D"]
+metadata/canvas_size = Vector2(1100, 618.75)
+[node name="Black" type="ColorRect" parent="."]
+offset_right = 1100.0
+offset_bottom = 618.75
+color = Color(0, 0, 0, 1)
+mouse_filter = 2
