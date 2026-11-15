@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SoundLevelData" load_steps=14 format=3]
+[gd_resource type="Resource" script_class="SoundLevelData" load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/level_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/audio_clip_data.gd" id="2"]
@@ -14,6 +14,8 @@
 [ext_resource type="PackedScene" path="res://scenes/story_scratch.tscn" id="12"]
 
 [ext_resource type="PackedScene" path="res://scenes/story_hold.tscn" id="13"]
+[ext_resource type="PackedScene" path="res://scenes/story_ending.tscn" id="14"]
+[ext_resource type="AudioStream" path="res://assets/prologue/audio/05_title_ring.wav" id="15"]
 
 [resource]
 script = ExtResource("1")
@@ -22,13 +24,18 @@ clips = Array[ExtResource("2")]([ExtResource("8"), ExtResource("4"), ExtResource
 initial_order = Array[String](["silence", "dial", "phone_feedback", "coin"])
 correct_order = Array[String](["silence", "coin", "dial", "phone_feedback"])
 slot_duration = 3.0
+shot_speed = 0.9
+shot_hold = 2.0
 duration = 12.0
 failure_time = 12.0
 stage_starts = PackedFloat32Array(0, 3, 6, 9)
 opening_scene = ExtResource("6")
+loop_opening_while_editing = true
 failure_shots = Array[PackedScene]([ExtResource("6"), ExtResource("9"), ExtResource("12"), ExtResource("10")])
 success_shots = Array[PackedScene]([ExtResource("13"), ExtResource("9"), ExtResource("11"), ExtResource("10")])
 ending_scene = ExtResource("7")
+ending_shot = ExtResource("14")
+ending_sound = ExtResource("15")
 autoplay = true
 follow_clip_shots = true
 lock_first_clip = true

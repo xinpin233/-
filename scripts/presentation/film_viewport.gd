@@ -39,7 +39,7 @@ func _ready() -> void:
 	resized.connect(_fit)
 	_fit()
 
-func reset(opening_scene: PackedScene = null) -> void:
+func reset(opening_scene: PackedScene = null, loop_opening := false) -> void:
 	_video.stop()
 	_video.paused = false
 	_video.hide()
@@ -54,6 +54,10 @@ func reset(opening_scene: PackedScene = null) -> void:
 		frame.queue_redraw()
 	if opening_scene != null:
 		_frames[0].show_custom_scene(opening_scene)
+		var opening := _frames[0].custom_scene
+		if loop_opening and opening.has_method("set_idle_loop"):
+			opening.set_idle_loop()
+			_frames[0].media_active = true
 	_fit()
 
 func start_route(level: SoundLevelData, safe: bool, order: Array[String]) -> void:
@@ -129,6 +133,26 @@ func set_paused(value: bool) -> void:
 
 func freeze() -> void:
 	set_paused(true)
+
+func roll_to_ending(source: PackedScene, duration: float) -> VideoStreamPlayer:
+	freeze()
+	var frame := SoundComicFrame.new()
+	frame.size = Vector2(1100, 375)
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var start := _rail_offset
+	frame.position.x = -start + 1120.0
+	_rail.add_child(frame)
+	frame.show_custom_scene(source)
+	var tween := create_tween()
+	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_method(_set_rail_offset, start, start - 1120.0, maxf(duration, 0.01))
+	await tween.finished
+	frame.media_active = true
+	return frame.custom_scene.get_node("Player") as VideoStreamPlayer
+
+func _set_rail_offset(value: float) -> void:
+	_rail_offset = value
+	_fit()
 
 func _fit() -> void:
 	var index := clampi(roundi(-_rail_offset / 1120.0), 0, maxi(0, _frames.size() - 1))

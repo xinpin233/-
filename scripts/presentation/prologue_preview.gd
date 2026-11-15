@@ -1,6 +1,7 @@
 extends Control
 @export var interactive := false
 @export var title_only := false
+@export var skip_title_intro := false
 @export var title_ring: AudioStream
 @export var menu_music: AudioStream
 
@@ -112,6 +113,8 @@ func _ready() -> void:
 		sound.stream = title_ring
 		sound.finished.connect(_repeat_title_ring)
 		_repeat_title_ring()
+		if skip_title_intro:
+			_advance_title(4.0)
 	_update_picture()
 	if interactive:
 		_start_show.call_deferred()

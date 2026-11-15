@@ -21,3 +21,6 @@ func set_media_active(active: bool) -> void:
 		player.play()
 		player.show()
 	player.paused = not active
+
+func set_idle_loop() -> void:
+	player.loop = true

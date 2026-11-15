@@ -9,17 +9,22 @@ extends Resource
 @export var initial_order: Array[String] = []
 @export var correct_order: Array[String] = []
 @export var slot_duration: float = 2.5
+@export_range(0.1, 2.0) var shot_speed := 1.0
+@export var shot_hold := 0.0
 @export_range(0.0, 3.0) var transition_duration: float = 0.9
 @export var duration: float = 9.0
 @export var failure_time: float = 8.2
 @export var stage_starts: PackedFloat32Array = PackedFloat32Array([0.0, 2.5, 5.0, 7.0])
 @export var ambience: AudioStream
 @export var opening_scene: PackedScene
+@export var loop_opening_while_editing := false
 @export var follow_clip_shots := false
 @export var lock_first_clip := false
 @export var success_shots: Array[PackedScene] = []
 @export var failure_shots: Array[PackedScene] = []
 @export var ending_scene: PackedScene
+@export var ending_shot: PackedScene
+@export var ending_sound: AudioStream
 @export var autoplay := false
 @export_file("*.ogv") var success_video: String = ""
 @export_file("*.ogv") var failure_video: String = ""

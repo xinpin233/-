@@ -1,9 +1,13 @@
-[gd_resource type="Resource" script_class="AudioClipData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="AudioClipData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/audio_clip_data.gd" id="1"]
+
+[ext_resource type="AudioStream" path="res://assets/prologue/audio/01_coin_insert.wav" id="2"]
 
 [resource]
 script = ExtResource("1")
 id = "coin"
 title = "硬币投入"
 tint = Color(0.64, 0.70, 0.60, 1)
+stream = ExtResource("2")
+waveform = PackedFloat32Array(0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.5547, 0.7992, 1.0000, 0.1414, 0.0259, 0.0144, 0.0099, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000)

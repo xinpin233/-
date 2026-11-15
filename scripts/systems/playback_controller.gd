@@ -6,6 +6,7 @@ signal frame_changed(elapsed: float, stage: int, progress: float)
 signal cue_changed(slot: int)
 signal completed(success: bool)
 signal transition_changed(stage: int, fraction: float)
+signal shot_held(elapsed: float)
 
 var level: SoundLevelData
 var audio: SoundAudioDirector
@@ -17,6 +18,7 @@ var _order: Array[String] = []
 var _active_slot: int = -2
 var _transition_left := 0.0
 var _next_stage := 1
+var _hold_left := 0.0
 
 func configure(data: SoundLevelData, director: SoundAudioDirector) -> void:
 	level = data
@@ -31,6 +33,7 @@ func start(order: Array[String]) -> void:
 	_active_slot = -2
 	_transition_left = 0.0
 	_next_stage = 1
+	_hold_left = 0.0
 	audio.start_bed(level.ambience)
 	_publish_frame()
 
@@ -44,7 +47,7 @@ func set_paused(value: bool) -> void:
 	if not playing:
 		return
 	paused = value
-	audio.set_paused(value or _transition_left > 0.0)
+	audio.set_paused(value or _transition_left > 0.0 or _hold_left > 0.0)
 
 func _process(delta: float) -> void:
 	advance(delta)
@@ -55,6 +58,15 @@ func advance(delta: float) -> void:
 	var ending := level.duration if route_success else level.failure_time
 	var remaining := maxf(delta, 0.0)
 	while remaining > 0.0:
+		if _hold_left > 0.0:
+			var hold_step := minf(remaining, _hold_left)
+			_hold_left -= hold_step
+			remaining -= hold_step
+			if _hold_left > 0.0 or elapsed >= ending:
+				break
+			if _transition_left <= 0.0:
+				audio.set_paused(false)
+				_publish_frame()
 		if _transition_left > 0.0:
 			var step := minf(remaining, _transition_left)
 			_transition_left = maxf(0.0, _transition_left - step)
@@ -67,20 +79,28 @@ func advance(delta: float) -> void:
 		var boundary := ending
 		if _next_stage < level.stage_starts.size():
 			boundary = minf(boundary, level.stage_starts[_next_stage])
-		var step := minf(remaining, maxf(0.0, boundary - elapsed))
-		elapsed += step
+		var to_boundary := maxf(0.0, boundary - elapsed) / level.shot_speed
+		var step := minf(remaining, to_boundary)
+		elapsed = boundary if step >= to_boundary else elapsed + step * level.shot_speed
 		remaining -= step
-		if elapsed >= ending:
-			break
-		if _next_stage < level.stage_starts.size() and elapsed >= boundary:
+		if elapsed >= boundary:
+			_hold_left = level.shot_hold
+			if _hold_left > 0.0:
+				audio.set_paused(true)
+				shot_held.emit(elapsed)
+			if elapsed >= ending:
+				if _hold_left <= 0.0:
+					break
+				continue
 			_next_stage += 1
 			_transition_left = level.transition_duration
 			if _transition_left > 0.0:
 				audio.set_paused(true)
-				transition_changed.emit(_next_stage - 1, 0.0)
+				if _hold_left <= 0.0:
+					transition_changed.emit(_next_stage - 1, 0.0)
 		else:
 			break
-	if _transition_left > 0.0:
+	if _transition_left > 0.0 or _hold_left > 0.0:
 		return
 	_publish_frame()
 	if elapsed >= ending:
