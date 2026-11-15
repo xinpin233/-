@@ -26,16 +26,18 @@ func _run() -> void:
 	await process_frame
 	game.playback.set_process(false)
 	game.audio.set_muted(true)
-	check(game.level.clips.size() == 3, "Phone chapter keeps three clips")
+	check(game.level.clips.size() == 4, "Phone chapter keeps four clips")
 	check(game.timeline._ruler.visible, "Ruler is visible")
 	check(game.timeline.strips[0]._title_label.is_visible_in_tree(), "Clip names are visible")
 	check(game.film._frames[0].custom_scene != null, "Phone artwork is preserved")
 	_check_aspect()
 	await _snapshot("paper_ui")
 	var original: Array[String] = game.state.order.duplicate()
-	var source: Control = game.timeline.strips[0]
+	# Slot 0 is pinned by lock_first_clip, so the movable solve starts at the coin slot.
+	var source: Control = game.timeline.strips[3]
 	var grip := Vector2(source.size.x * 0.22, 44)
 	var start := source.global_position + grip
+	var dial_x_before: float = game.timeline.strips[1].position.x
 	await _mouse(start, false, true)
 	await _mouse(start + Vector2(0, -30), true, true)
 	await create_timer(0.14).timeout
@@ -49,23 +51,23 @@ func _run() -> void:
 	await _mouse(target, true, true)
 	check(game.state.order == original, "Dragging is a preview until release")
 	await create_timer(0.06).timeout
-	check(source != game.timeline.strips[1] and game.timeline.strips[1].position.x < game.timeline._slot_position(1).x, "Neighbour moves aside during drag")
+	check(source != game.timeline.strips[1] and game.timeline.strips[1].position.x > dial_x_before + 0.5, "Neighbour moves aside during drag")
 	await _snapshot("paper_drag")
 	await _mouse(target, false, false)
 	await create_timer(0.25).timeout
 	check(game.state.order == game.level.correct_order, "Mouse release commits the insertion")
 	check(game.timeline._drag_ghost == null, "Landing clears drag overlay")
 	game._play_or_pause()
-	check(game.timeline.strips[0].locked, "Playback locks editing")
+	check(game.timeline.strips[1].locked, "Playback locks editing")
 	game.playback.advance(1.0)
 	game._play_or_pause()
 	var paused_at: float = game.playback.elapsed
 	game.playback.advance(1.0)
 	check(is_equal_approx(paused_at, game.playback.elapsed), "Pause freezes playback")
 	game._stop()
-	check(not game.timeline.strips[0].locked, "Stopping unlocks editing")
+	check(not game.timeline.strips[1].locked, "Stopping unlocks editing")
 	game._reset()
-	start = game.timeline.strips[0].global_position + grip
+	start = game.timeline.strips[3].global_position + grip
 	await _mouse(start, false, true)
 	await _mouse(start + Vector2(0, -30), true, true)
 	await _mouse(start + Vector2(0, -350), true, true)
@@ -90,14 +92,15 @@ func _run() -> void:
 	# A fast horizontal grab may cross a slot in the very first motion event.
 	game._reset()
 	await process_frame
-	start = game.timeline.strips[0].global_position + grip
+	start = game.timeline.strips[3].global_position + grip
 	target = game.timeline._track.global_position + game.timeline._slot_position(1) + grip
 	await _mouse(start, false, true)
 	await _mouse(target, true, true)
 	var neighbour: Control = game.timeline.strips[1]
 	check(game.timeline._drag_ghost != null, "Fast horizontal grab creates drag overlay")
-	check(neighbour.position.x > game.timeline._slot_position(0).x + 1, "First motion crossing a slot animates instead of snapping")
-	await create_timer(0.20).timeout
+	check(neighbour.position.x < game.timeline._slot_position(2).x - 1.0, "First motion crossing a slot animates instead of snapping")
+	await create_timer(0.28).timeout
+	check(neighbour.position.x > game.timeline._slot_position(2).x - 6.0, "Neighbour slides into the vacated slot")
 	await _mouse(target, false, false)
 	check(game.timeline._drag_ghost != null and game.timeline._settling, "Release retains the overlay for landing animation")
 	await create_timer(0.25).timeout
