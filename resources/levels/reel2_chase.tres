@@ -10,6 +10,7 @@
 script = ExtResource("1")
 reel_number = 2
 next_reel_number = 3
+next_level_path = "res://resources/levels/reel3_bush.tres"
 title = "追车"
 clips = Array[ExtResource("2")]([ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6")])
 initial_order = Array[String](["reel2_ring", "reel2_engine", "reel2_brake", "reel2_drive"])
@@ -17,7 +18,7 @@ correct_order = Array[String](["reel2_ring", "reel2_brake", "reel2_engine", "ree
 slot_duration = 5.0
 shot_speed = 1.0
 shot_hold = 0.0
-transition_duration = 0.22
+transition_duration = 0.18
 duration = 20.0
 failure_time = 20.0
 stage_starts = PackedFloat32Array(0, 5, 10, 15)

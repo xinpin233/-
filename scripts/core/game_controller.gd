@@ -8,9 +8,8 @@ var audio: SoundAudioDirector
 var playback: SoundPlaybackController
 var _active_slot: int = -1
 var _preview_slot: int = -1
-var _first_show := false
 var _ending := false
-var _film_placeholder: Control
+var _chapter_pending := false
 
 @onready var film: SoundFilmViewport = %Film
 @onready var timeline: SoundAudioTimeline = %AudioTimeline
@@ -51,6 +50,7 @@ func _ready() -> void:
 	playback.shot_held.connect(_on_shot_held)
 	playback.cue_changed.connect(func(slot: int) -> void: _active_slot = slot)
 	playback.completed.connect(_on_completed)
+	playback.order_committed.connect(func(_slot: int) -> void: timeline.set_editable_from(playback.committed_count))
 	audio.preview_finished.connect(_clear_preview)
 	timeline.preview_requested.connect(_preview)
 	timeline.move_requested.connect(_move_clip)
@@ -63,60 +63,7 @@ func _ready() -> void:
 	progress.max_value = level.duration
 	%Chapter.text = "序 幕  ·  " + level.title
 	%Location.text = "场景 / " + level.title
-	_first_show = level.autoplay
 	_reset()
-	if level.autoplay:
-		_begin_fullscreen_show()
-		_play_or_pause.call_deferred()
-
-func _begin_fullscreen_show() -> void:
-	var holder := film.get_parent()
-	_film_placeholder = Control.new()
-	_film_placeholder.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	holder.add_child(_film_placeholder)
-	film.reparent(self, false)
-	film.z_index = 2
-	resized.connect(_fit_fullscreen_film)
-	_fit_fullscreen_film()
-	$MachineShell.self_modulate.a = 0.0
-
-func _fit_fullscreen_film() -> void:
-	var width := minf(size.x, size.y * 16.0 / 9.0)
-	var extent := Vector2(width, width * 9.0 / 16.0)
-	film.position = (size - extent) * 0.5
-	film.size = extent
-
-func _reveal_editing_desk() -> void:
-	resized.disconnect(_fit_fullscreen_film)
-	play_button.disabled = true
-	var transport := play_button.get_parent() as Control
-	for control in [timeline, transport]:
-		control.modulate.a = 0.0
-		control.show()
-	await get_tree().process_frame
-	await get_tree().process_frame
-	var tween := create_tween().set_parallel()
-	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_method(_pull_back_film, 0.0, 1.0, 1.65)
-	tween.tween_property($MachineShell, "self_modulate:a", 1.0, 1.4)
-	tween.tween_property(timeline, "modulate:a", 1.0, 0.9).set_delay(0.7)
-	tween.tween_property(transport, "modulate:a", 1.0, 0.9).set_delay(0.7)
-	await tween.finished
-	var holder := _film_placeholder.get_parent()
-	holder.remove_child(_film_placeholder)
-	_film_placeholder.queue_free()
-	film.reparent(holder, false)
-	film.z_index = 0
-	_first_show = false
-	play_button.disabled = false
-	state.phase = SoundRunState.Phase.FAILED
-	_reset_presentation()
-
-func _pull_back_film(fraction: float) -> void:
-	_fit_fullscreen_film()
-	var target := _film_placeholder.get_global_rect()
-	film.global_position = film.global_position.lerp(target.position, fraction)
-	film.size = film.size.lerp(target.size, fraction)
 
 func _show_error(message: String) -> void:
 	status.show()
@@ -128,18 +75,24 @@ func _show_error(message: String) -> void:
 	push_error(message)
 
 func _reset() -> void:
+	_ending = false
+	playback.configure(level, audio)
 	playback.stop()
 	_clear_preview()
 	state.reset(level)
+	progress.max_value = level.duration
+	$Margin/Content/Header/Reel.text = "REEL %02d" % level.reel_number
+	%Chapter.text = "第 %d 卷  ·  %s" % [level.reel_number, level.title]
+	%Location.text = "场景 / " + level.title
 	timeline.rebuild(level, state.order)
 	_reset_presentation()
 
 func _reset_presentation(keep_opening := false) -> void:
 	if not keep_opening:
-		film.reset(level.opening_scene, level.loop_opening_while_editing and not _first_show)
+		film.reset(level.opening_scene, level.loop_opening_while_editing)
 	_active_slot = -1
 	progress.value = 0
-	time_label.text = "● REEL 01  /  00:00"
+	time_label.text = "● REEL %02d  /  00:00" % level.reel_number
 	$MachineShell.set_stage(0)
 	caption.text = ""
 	status.hide()
@@ -150,7 +103,17 @@ func _reset_presentation(keep_opening := false) -> void:
 func _move_clip(source: int, target: int) -> void:
 	if level.lock_first_clip and (source == 0 or target == 0):
 		return
-	if _first_show or not state.can_edit() or source == target or source < 0 or target < 0 or source >= state.order.size() or target >= state.order.size():
+	if _ending or source == target or source < 0 or target < 0 or source >= state.order.size() or target >= state.order.size():
+		return
+	if playback.playing:
+		if source < playback.committed_count or target < playback.committed_count:
+			return
+		var updated := OrderRules.moved(state.order, source, target)
+		if playback.update_pending_order(updated):
+			state.order = updated
+			film.refresh_pending(level, state.order, playback.committed_count)
+			timeline.rebuild(level, state.order)
+			_refresh_controls()
 		return
 	audio.stop_all()
 	_clear_preview()
@@ -162,7 +125,7 @@ func _move_clip(source: int, target: int) -> void:
 	timeline.strips[target].grab_focus()
 
 func _preview(slot: int) -> void:
-	if _first_show or not state.can_edit() or slot < 0 or slot >= state.order.size():
+	if not state.can_edit() or slot < 0 or slot >= state.order.size():
 		return
 	_clear_preview()
 	_preview_slot = slot
@@ -196,6 +159,7 @@ func _play_or_pause() -> void:
 		film.set_paused(false)
 	else:
 		_clear_preview()
+		timeline.cancel_drag(false)
 		state.phase = SoundRunState.Phase.PLAYING
 		state.attempts += 1
 		status.hide()
@@ -227,17 +191,12 @@ func _on_frame(elapsed: float, stage: int, fraction: float) -> void:
 	film.update_frame(elapsed, stage, fraction, level)
 	caption.text = ""
 	progress.value = elapsed
-	time_label.text = "● REEL 01  /  00:%02d" % int(elapsed)
+	time_label.text = "● REEL %02d  /  00:%02d" % [level.reel_number, int(elapsed)]
 	$MachineShell.set_stage(stage)
 	timeline.update_playhead(elapsed, _active_slot)
 
 func _on_completed(success: bool) -> void:
-	if _first_show and not success:
-		film.freeze()
-		_reveal_editing_desk()
-		return
-	_first_show = false
-	if success and level.ending_scene != null:
+	if success and (level.ending_shot != null or not level.next_level_path.is_empty()):
 		_play_ending()
 		return
 	if not success and level.autoplay:
@@ -246,9 +205,13 @@ func _on_completed(success: bool) -> void:
 		return
 	state.phase = SoundRunState.Phase.SUCCEEDED if success else SoundRunState.Phase.FAILED
 	film.freeze()
-	status.hide()
+	status.visible = level.use_bush_rules or level.use_chase_rules
+	status.text = level.success_title if success else level.failure_title
+	if not success and playback.chase != null and playback.chase.vehicle != ChaseRules.Vehicle.CRASHED:
+		status.text = "尚未驶离"
 	status.add_theme_color_override("font_color", SoundGameTheme.TEAL if success else SoundGameTheme.RED)
-	caption.text = ""
+	caption.text = level.success_caption if success else level.failure_caption
+	caption.get_parent().visible = level.use_bush_rules or level.use_chase_rules
 	_active_slot = -1
 	timeline.update_playhead(playback.elapsed, -1)
 	_refresh_controls()
@@ -263,24 +226,31 @@ func _play_ending() -> void:
 		if level.ending_sound != null:
 			ring.stream = level.ending_sound
 			ring.play()
-			create_tween().tween_property(ring, "volume_db", -26.0, 4.2)
+			if not audio.muted:
+				create_tween().tween_property(ring, "volume_db", -26.0, 4.2)
 		await player.finished
-		var ending := player.get_parent()
-		var still := ending.get_node("EndingStill") as TextureRect
-		var start_label := ending.get_node("StartGame") as Label
-		still.show()
-		player.hide()
-		create_tween().tween_property(start_label, "modulate:a", 1.0, 0.9)
+		_advance_chapter()
 		return
-	get_tree().change_scene_to_packed.call_deferred(level.ending_scene)
+	_advance_chapter()
+
+func _advance_chapter() -> void:
+	_ending = false
+	if not level.next_level_path.is_empty():
+		level = load(level.next_level_path) as SoundLevelData
+		_reset()
+	else:
+		state.phase = SoundRunState.Phase.SUCCEEDED
+		_refresh_controls()
 
 func _refresh_controls() -> void:
-	timeline.visible = not _first_show
-	play_button.get_parent().visible = not _first_show
-	var locked := _first_show or not state.can_edit()
+	timeline.visible = true
+	play_button.get_parent().visible = true
+	var locked := _ending
+	play_button.disabled = locked
+	timeline.set_editable_from(playback.committed_count if playback.playing else 0)
 	timeline.set_locked(locked)
-	stop_button.disabled = not locked
-	reset_button.disabled = locked
+	stop_button.disabled = not playback.playing or _ending
+	reset_button.disabled = playback.playing or locked
 	match state.phase:
 		SoundRunState.Phase.PLAYING:
 			play_button.text = "暂 停  Ⅱ"
@@ -292,7 +262,7 @@ func _refresh_controls() -> void:
 func _input(event: InputEvent) -> void:
 	if playback == null or not event is InputEventKey or not event.pressed or event.echo:
 		return
-	if (_first_show or _ending) and event.keycode != KEY_F11:
+	if _ending and event.keycode != KEY_F11:
 		return
 	match event.keycode:
 		KEY_F11:

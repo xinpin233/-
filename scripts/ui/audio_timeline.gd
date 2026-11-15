@@ -14,6 +14,8 @@ const LIFT_HEIGHT := 10.0
 
 var strips: Array[SoundAudioStrip] = []
 var _first_movable_slot := 0
+var _pinned_slots := 0
+var _lock_last := false
 var _slot_duration := 2.5
 var _track_duration := 5.0
 var _clip_width := 292.0
@@ -103,7 +105,10 @@ func _ready() -> void:
 	resized.connect(_position_overlays)
 
 func rebuild(level: SoundLevelData, order: Array[String]) -> void:
-	_first_movable_slot = 1 if level.lock_first_clip else 0
+	_pinned_slots = 1 if level.lock_first_clip else 0
+	_lock_last = level.lock_last_clip
+	if not _committing_drop:
+		_first_movable_slot = _pinned_slots
 	if not _committing_drop:
 		_clear_drag()
 	_slot_duration = level.slot_duration
@@ -156,7 +161,7 @@ func set_locked(value: bool) -> void:
 	if value:
 		_clear_drag()
 	for strip in strips:
-		strip.set_locked(value or strip.slot < _first_movable_slot)
+		strip.set_locked(value or strip.slot < _first_movable_slot or (_lock_last and strip.slot == strips.size() - 1))
 
 func update_playhead(elapsed: float, active_slot: int) -> void:
 	_playhead_elapsed = elapsed
@@ -414,3 +419,10 @@ func _disable_pointer_input(control: Control) -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and is_node_ready():
 		cancel_drag(false)
+
+func set_editable_from(first: int) -> void:
+	var boundary := maxi(_pinned_slots, first)
+	if _drag_source >= 0 and (_drag_source < boundary or _drag_target < boundary):
+		cancel_drag(false)
+	_first_movable_slot = boundary
+	set_locked(false)

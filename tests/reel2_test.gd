@@ -23,6 +23,7 @@ func run() -> void:
 	var production: SoundLevelData = game.level
 	game.level = production.duplicate()
 	game.level.next_reel_number = 0
+	game.level.next_level_path = ""
 	game.playback.configure(game.level,game.audio)
 	var rows := [
 		[["engine","brake","drive"],["drive_fast","approach","impact"],ChaseRules.Vehicle.CRASHED],
@@ -82,7 +83,7 @@ func run() -> void:
 	game._move_clip(2,1)
 	game._play_or_pause()
 	game.playback.advance(30)
-	check(game._chapter_pending, "Departed route advances to Reel 3")
+	check(game.level.reel_number == 3 and not game.playback.playing and not game.play_button.disabled, "Departed route advances to playable Reel 3")
 	# Verify actual decoded collision video finishes black, not an opening poster.
 	for name in ["crash","impact"]:
 		var shot = load("res://scenes/reel2/%s.tscn" % name).instantiate()

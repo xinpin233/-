@@ -5,34 +5,36 @@
 [ext_resource type="Texture2D" path="res://assets/prologue/video/ending_end.png" id="4"]
 
 [node name="VideoShot" type="Node2D"]
+metadata/canvas_size = Vector2(1100, 618.75)
 script = ExtResource("1")
 poster = ExtResource("2")
 stream = ExtResource("3")
 
 [node name="Matte" type="ColorRect" parent="."]
 offset_right = 1100.0
-offset_bottom = 825.0
+offset_bottom = 618.75
 mouse_filter = 2
 color = Color(0.231, 0.208, 0.251, 1)
 
 [node name="Still" type="TextureRect" parent="."]
 offset_left = 0.0
 offset_right = 1100.0
-offset_bottom = 825.0
+offset_bottom = 618.75
 mouse_filter = 2
 expand_mode = 1
+stretch_mode = 5
 
 [node name="Player" type="VideoStreamPlayer" parent="."]
 offset_left = 0.0
 offset_right = 1100.0
-offset_bottom = 825.0
+offset_bottom = 618.75
 mouse_filter = 2
 expand = true
 
 [node name="EndingStill" type="TextureRect" parent="."]
 visible = false
 offset_right = 1100.0
-offset_bottom = 825.0
+offset_bottom = 618.75
 mouse_filter = 2
 texture = ExtResource("4")
 expand_mode = 1

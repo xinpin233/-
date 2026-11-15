@@ -19,8 +19,9 @@ func run() -> void:
 		game._play_or_pause()
 		game.playback.advance(game.level.slot_duration)
 		check(game.playback._hold_left == 0, "No extra freeze before transition")
-		check(is_equal_approx(game.playback._transition_left, 0.22), "Transition starts immediately at boundary")
-		game.playback.advance(0.11)
+		var duration: float = game.level.transition_duration
+		check(is_equal_approx(game.playback._transition_left, duration), "Transition starts immediately at boundary")
+		game.playback.advance(duration * 0.5)
 		check(absf(game.film._rail_offset + 560) < 1, "Halfway transition slides halfway without snapping")
 		var offset: float = game.film._rail_offset
 		game._play_or_pause()

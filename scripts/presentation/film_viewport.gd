@@ -8,7 +8,9 @@ var _rail := Control.new()
 var _aperture := Control.new()
 var _video := VideoStreamPlayer.new()
 var _frames: Array[SoundComicFrame] = []
+var _slot_count := 4
 var _rail_offset: float = 0.0
+var _video_native := Vector2.ZERO
 
 func _ready() -> void:
 	clip_contents = true
@@ -22,14 +24,7 @@ func _ready() -> void:
 	_aperture.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_aperture)
 	_aperture.add_child(_rail)
-	for index in 4:
-		var frame := SoundComicFrame.new()
-		frame.stage = index
-		frame.position = Vector2(index * 1120, 0)
-		frame.size = Vector2(1100, 375)
-		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_rail.add_child(frame)
-		_frames.append(frame)
+	_resize_frames(4)
 	add_child(_video)
 	_video.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_video.expand = true
@@ -40,6 +35,7 @@ func _ready() -> void:
 	_fit()
 
 func reset(opening_scene: PackedScene = null, loop_opening := false) -> void:
+	_resize_frames(_slot_count)
 	_video.stop()
 	_video.paused = false
 	_video.hide()
@@ -61,35 +57,9 @@ func reset(opening_scene: PackedScene = null, loop_opening := false) -> void:
 	_fit()
 
 func start_route(level: SoundLevelData, safe: bool, order: Array[String]) -> void:
+	_slot_count = order.size()
 	reset()
-	var previous_x := 290.0
-	var previous_shot := level.opening_scene
-	var shots := level.success_shots if safe else level.failure_shots
-	for frame in _frames.slice(0, order.size()):
-		frame.safe_route = safe
-		frame.first_cue = 1 if order[0] == "gasp" else 0
-		frame.configure_clip(level.find_clip(order[frame.stage]), level.slot_duration)
-		if level.follow_clip_shots:
-			if frame.stage == 0:
-				frame.show_custom_scene(level.opening_scene)
-			else:
-				var shot_slot := level.initial_order.find(order[frame.stage])
-				if shot_slot == 0:
-					frame.show_custom_scene(shots[0] if safe and shots.size() > 0 else previous_shot)
-				elif shot_slot > 0 and shot_slot < shots.size():
-					previous_shot = shots[shot_slot]
-					frame.show_custom_scene(previous_shot)
-		elif frame.stage < shots.size():
-			frame.show_custom_scene(shots[frame.stage])
-		frame.start_x = previous_x
-		match order[frame.stage]:
-			"drips": frame.end_x = 405.0
-			"gasp": frame.end_x = previous_x - 45.0
-			"knock": frame.end_x = 173.0 if safe else 815.0
-			"alarm": frame.end_x = 194.0 if safe else 815.0
-		previous_x = frame.end_x
-		frame.queue_redraw()
-	_fit()
+	refresh_pending(level, order, 0)
 	var path := level.success_video if safe else level.failure_video
 	if path.is_empty():
 		return
@@ -101,6 +71,7 @@ func start_route(level: SoundLevelData, safe: bool, order: Array[String]) -> voi
 		media_warning.emit("视频格式不可播放，已使用演示分镜。")
 		return
 	_video.stream = stream
+	_video_native = Vector2.ZERO
 	_video.show()
 	_rail.hide()
 	_video.play()
@@ -109,15 +80,23 @@ func update_frame(elapsed: float, stage: int, progress: float, level: SoundLevel
 	if stage < 0 or stage >= _frames.size():
 		return
 	_frames[stage].progress = progress
-	_frames[stage].media_active = true
+	for index in _frames.size():
+		_frames[index].media_active = index == stage
+		_frames[index]._media_applied = index == stage
+		var media := _frames[index].custom_scene
+		if is_instance_valid(media) and media.has_method("set_media_active"):
+			media.set_media_active(index == stage)
 	_frames[stage].queue_redraw()
 	_video.paused = false
 	_rail_offset = -1120.0 * stage
 	_fit()
 
 func update_transition(stage: int, fraction: float) -> void:
-	_video.paused = true
+	# Both shots stay live during the slide: the outgoing frame keeps decoding
+	# and the incoming one warms up, so landing never snaps onto a frozen poster.
 	_frames[stage - 1].media_active = false
+	if stage < _frames.size():
+		_frames[stage].media_active = true
 	_frames[stage - 1].progress = 1.0
 	_frames[stage - 1].queue_redraw()
 	_frames[stage].progress = 0.0
@@ -133,6 +112,11 @@ func set_paused(value: bool) -> void:
 
 func freeze() -> void:
 	set_paused(true)
+	for frame in _frames:
+		frame.media_active = false
+		frame._media_applied = false
+		if is_instance_valid(frame.custom_scene) and frame.custom_scene.has_method("set_media_active"):
+			frame.custom_scene.set_media_active(false)
 
 func roll_to_ending(source: PackedScene, duration: float) -> VideoStreamPlayer:
 	freeze()
@@ -141,6 +125,8 @@ func roll_to_ending(source: PackedScene, duration: float) -> VideoStreamPlayer:
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var start := _rail_offset
 	frame.position.x = -start + 1120.0
+	frame.stage = _frames.size()
+	_frames.append(frame)
 	_rail.add_child(frame)
 	frame.show_custom_scene(source)
 	var tween := create_tween()
@@ -155,8 +141,14 @@ func _set_rail_offset(value: float) -> void:
 	_fit()
 
 func _fit() -> void:
-	var index := clampi(roundi(-_rail_offset / 1120.0), 0, maxi(0, _frames.size() - 1))
-	var source_size := _frames[index].content_size() if not _frames.is_empty() else Vector2(1100, 375)
+	# Blend the gate between neighbouring shots so a slide never snaps size.
+	var travel := -_rail_offset / 1120.0
+	var base := clampi(floori(travel), 0, maxi(0, _frames.size() - 1))
+	var ahead := clampi(base + 1, 0, maxi(0, _frames.size() - 1))
+	var source_size := Vector2(1100, 375)
+	if not _frames.is_empty():
+		var mix := clampf(travel - float(base), 0.0, 1.0)
+		source_size = _frames[base].content_size().lerp(_frames[ahead].content_size(), smoothstep(0.0, 1.0, mix))
 	var factor := minf(size.x / source_size.x, size.y / source_size.y)
 	_aperture.size = source_size * factor
 	_aperture.position = (size - _aperture.size) * 0.5
@@ -166,10 +158,77 @@ func _fit() -> void:
 	for frame in _frames:
 		frame.visible = absf(frame.stage + _rail_offset / 1120.0) < 1.0
 	if _video.stream != null:
-		var texture := _video.get_video_texture()
-		if texture != null and texture.get_width() > 0 and texture.get_height() > 0:
-			var native := texture.get_size()
-			var video_factor := minf(size.x / native.x, size.y / native.y)
+		if _video_native == Vector2.ZERO:
+			var texture := _video.get_video_texture()
+			if texture != null and texture.get_width() > 0 and texture.get_height() > 0:
+				_video_native = texture.get_size()
+		if _video_native != Vector2.ZERO:
+			var video_factor := minf(size.x / _video_native.x, size.y / _video_native.y)
 			_video.set_anchors_preset(Control.PRESET_TOP_LEFT)
-			_video.size = native * video_factor
+			_video.size = _video_native * video_factor
 			_video.position = (size - _video.size) * 0.5
+
+func _resize_frames(count: int) -> void:
+	while _frames.size() > count:
+		var old := _frames.pop_back() as SoundComicFrame
+		_rail.remove_child(old)
+		old.queue_free()
+	while _frames.size() < count:
+		var frame := SoundComicFrame.new()
+		frame.stage = _frames.size()
+		frame.position = Vector2(frame.stage * 1120, 0)
+		frame.size = Vector2(1100, 375)
+		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_rail.add_child(frame)
+		_frames.append(frame)
+
+func refresh_pending(level: SoundLevelData, order: Array[String], first_slot: int) -> void:
+	if level.use_bush_rules or level.use_chase_rules:
+		var rules := BushRules.new()
+		var chase_rules := ChaseRules.new()
+		for index in order.size():
+			var source: PackedScene
+			if level.use_bush_rules:
+				source = BushMedia.shot(rules.consume(order[index]).event)
+			else:
+				source = ChaseRules.shot(chase_rules.consume(order[index], index == order.size() - 1))
+			if index < first_slot:
+				continue
+			_frames[index].configure_clip(level.find_clip(order[index]), level.slot_duration)
+			_frames[index].show_custom_scene(source)
+		_fit()
+		return
+	var safe := OrderRules.is_success(level, order)
+	var previous_x := 290.0
+	var previous_shot := level.opening_scene
+	var prefix_safe := true
+	var shots: Array[PackedScene] = []
+	for frame in _frames.slice(0, order.size()):
+		prefix_safe = prefix_safe and order[frame.stage] == level.correct_order[frame.stage]
+		shots = level.success_shots if prefix_safe else level.failure_shots
+		if frame.stage < first_slot:
+			continue
+		frame.safe_route = safe
+		frame.first_cue = 1 if order[0] == "gasp" else 0
+		frame.configure_clip(level.find_clip(order[frame.stage]), level.slot_duration)
+		if level.follow_clip_shots:
+			if frame.stage == 0:
+				frame.show_custom_scene(level.opening_scene)
+			else:
+				var shot_slot := level.initial_order.find(order[frame.stage])
+				if shot_slot == 0:
+					frame.show_custom_scene(shots[0] if prefix_safe and shots.size() > 0 else previous_shot)
+				elif shot_slot > 0 and shot_slot < shots.size():
+					previous_shot = shots[shot_slot]
+					frame.show_custom_scene(previous_shot)
+		elif frame.stage < shots.size():
+			frame.show_custom_scene(shots[frame.stage])
+		frame.start_x = previous_x
+		match order[frame.stage]:
+			"drips": frame.end_x = 405.0
+			"gasp": frame.end_x = previous_x - 45.0
+			"knock": frame.end_x = 173.0 if safe else 815.0
+			"alarm": frame.end_x = 194.0 if safe else 815.0
+		previous_x = frame.end_x
+		frame.queue_redraw()
+	_fit()

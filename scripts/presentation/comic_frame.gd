@@ -17,6 +17,7 @@ var clip_id := ""
 var custom_scene: Node
 var clip_duration := 3.0
 var media_active := false
+var _media_applied := false
 
 func configure_clip(clip: AudioClipData, duration: float) -> void:
 	clip_id = clip.id
@@ -28,6 +29,7 @@ func clear_custom_scene() -> void:
 		remove_child(custom_scene)
 		custom_scene.queue_free()
 	custom_scene = null
+	_media_applied = false
 
 func show_custom_scene(source: PackedScene) -> void:
 	clear_custom_scene()
@@ -42,8 +44,10 @@ func content_size() -> Vector2:
 
 func _process(_delta: float) -> void:
 	if is_instance_valid(custom_scene):
-		if custom_scene.has_method("set_media_active"):
-			custom_scene.set_media_active(media_active)
+		if media_active != _media_applied:
+			_media_applied = media_active
+			if custom_scene.has_method("set_media_active"):
+				custom_scene.set_media_active(media_active)
 		if custom_scene.has_method("set_shot_progress"):
 			custom_scene.set_shot_progress(progress, clip_duration)
 		var animation := custom_scene.get_node_or_null("AnimationPlayer") as AnimationPlayer

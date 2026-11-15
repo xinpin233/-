@@ -58,8 +58,14 @@ func _run() -> void:
 	check(game.state.order == game.level.correct_order, "Mouse release commits the insertion")
 	check(game.timeline._drag_ghost == null, "Landing clears drag overlay")
 	game._play_or_pause()
-	check(game.timeline.strips[1].locked, "Playback locks editing")
-	game.playback.advance(1.0)
+	check(not game.timeline.strips[2].locked, "Pending clips stay editable during playback")
+	game.playback.advance(game.level.slot_duration * 2.0 + 0.1)
+	check(game.timeline.strips[1].locked, "Committed clip locks once it has played")
+	check(not game.timeline.strips[3].locked, "Unplayed clips remain movable mid-playback")
+	var before_swap: Array[String] = game.state.order.duplicate()
+	game._move_clip(3, 2)
+	check(game.state.order[2] == before_swap[3] and game.state.order[3] == before_swap[2], "Reordering unplayed clips works during playback")
+	game._move_clip(2, 3)
 	game._play_or_pause()
 	var paused_at: float = game.playback.elapsed
 	game.playback.advance(1.0)
@@ -121,8 +127,10 @@ func _check_aspect() -> void:
 	var artwork: Node2D = frame.custom_scene
 	var basis := artwork.get_global_transform()
 	check(is_equal_approx(basis.x.length(), basis.y.length()), "Artwork uses uniform scale")
-	var bounds := Rect2(artwork.global_position, Vector2(1100, 825) * basis.get_scale())
-	check(game.film.get_global_rect().grow(1).encloses(bounds), "Full 4:3 composition fits inside film")
+	var gate: Vector2 = frame.content_size()
+	check(is_equal_approx(gate.x / gate.y, 16.0 / 9.0), "Shot gate stays 16:9")
+	var bounds := Rect2(artwork.global_position, gate * basis.get_scale())
+	check(game.film.get_global_rect().grow(1).encloses(bounds), "Composition fits inside film")
 
 func _mouse(at: Vector2, motion: bool, pressed: bool) -> void:
 	if motion:

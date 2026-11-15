@@ -38,6 +38,6 @@ func _draw() -> void:
 	for index in shot_count:
 		var square := Rect2(surround.position.x - 88, surround.position.y + 48 + index * 62, 50, 50)
 		draw_rect(square, SoundGameTheme.RED if index == active_stage else SoundGameTheme.INK)
-		var numeral: String = ["I", "II", "III", "IV"][index]
+		var numeral: String = ["I", "II", "III", "IV", "V"][index] if index < 5 else str(index + 1)
 		var width := font.get_string_size(numeral, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x
 		draw_string(font, square.position + Vector2((50 - width) / 2, 31), numeral, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, SoundGameTheme.PAPER)

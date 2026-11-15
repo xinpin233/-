@@ -3,6 +3,12 @@ extends Resource
 ## Story, timings and routes live here, outside the UI and transport.
 
 @export var title: String = "门后"
+@export var reel_number := 1
+@export var next_reel_number := 0
+@export_file("*.tres") var next_level_path := ""
+@export var use_chase_rules := false
+@export var use_bush_rules := false
+@export var lock_last_clip := false
 @export var subtitle: String = "维修走廊 / 第一幕"
 @export_multiline var introduction: String = "隔着磨砂门，她只能听见门外的声音。"
 @export var clips: Array[AudioClipData] = []
