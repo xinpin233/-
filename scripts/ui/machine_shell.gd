@@ -54,5 +54,7 @@ func _draw() -> void:
 	draw_rect(Rect2(rect.position + Vector2(10, 10), rect.size), Color("#a49aa6"))
 	draw_rect(rect, Color("#3b3540"))
 	var play: Control = desk.get_node("%PlayButton")
+	if not play.is_visible_in_tree():
+		return
 	var button_rect := play.get_global_rect()
 	draw_rect(Rect2(button_rect.position + Vector2(5, 5), button_rect.size), Color("#3b3540"))

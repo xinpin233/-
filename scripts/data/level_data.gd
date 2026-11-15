@@ -9,6 +9,8 @@ extends Resource
 @export var initial_order: Array[String] = []
 @export var correct_order: Array[String] = []
 @export var slot_duration: float = 2.5
+@export_range(0.1, 2.0) var shot_speed := 1.0
+@export var shot_hold := 0.0
 @export_range(0.0, 3.0) var transition_duration: float = 0.9
 @export var duration: float = 9.0
 @export var failure_time: float = 8.2

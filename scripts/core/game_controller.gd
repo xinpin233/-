@@ -8,6 +8,7 @@ var audio: SoundAudioDirector
 var playback: SoundPlaybackController
 var _active_slot: int = -1
 var _preview_slot: int = -1
+var _first_show := false
 
 @onready var film: SoundFilmViewport = %Film
 @onready var timeline: SoundAudioTimeline = %AudioTimeline
@@ -36,6 +37,7 @@ func _ready() -> void:
 	playback.configure(level, audio)
 	playback.frame_changed.connect(_on_frame)
 	playback.transition_changed.connect(_on_transition)
+	playback.shot_held.connect(_on_shot_held)
 	playback.cue_changed.connect(func(slot: int) -> void: _active_slot = slot)
 	playback.completed.connect(_on_completed)
 	audio.preview_finished.connect(_clear_preview)
@@ -48,6 +50,7 @@ func _ready() -> void:
 	film.media_warning.connect(func(message: String) -> void: push_warning(message))
 
 	progress.max_value = level.duration
+	_first_show = level.autoplay
 	_reset()
 	if level.autoplay:
 		_play_or_pause.call_deferred()
@@ -82,7 +85,7 @@ func _reset_presentation() -> void:
 func _move_clip(source: int, target: int) -> void:
 	if level.lock_first_clip and (source == 0 or target == 0):
 		return
-	if not state.can_edit() or source == target or source < 0 or target < 0 or source >= state.order.size() or target >= state.order.size():
+	if _first_show or not state.can_edit() or source == target or source < 0 or target < 0 or source >= state.order.size() or target >= state.order.size():
 		return
 	audio.stop_all()
 	_clear_preview()
@@ -94,7 +97,7 @@ func _move_clip(source: int, target: int) -> void:
 	timeline.strips[target].grab_focus()
 
 func _preview(slot: int) -> void:
-	if not state.can_edit() or slot < 0 or slot >= state.order.size():
+	if _first_show or not state.can_edit() or slot < 0 or slot >= state.order.size():
 		return
 	_clear_preview()
 	_preview_slot = slot
@@ -147,6 +150,10 @@ func _toggle_mute() -> void:
 	mute_button.text = "取消静音 [M]" if audio.muted else "声音：开 [M]"
 	mute_button.button_pressed = audio.muted
 
+func _on_shot_held(elapsed: float) -> void:
+	film.freeze()
+	timeline.update_playhead(elapsed, -1)
+
 func _on_transition(stage: int, fraction: float) -> void:
 	film.update_transition(stage, fraction)
 	timeline.update_playhead(playback.elapsed, -1)
@@ -159,6 +166,7 @@ func _on_frame(elapsed: float, stage: int, fraction: float) -> void:
 	timeline.update_playhead(elapsed, _active_slot)
 
 func _on_completed(success: bool) -> void:
+	_first_show = false
 	if success and level.ending_scene != null:
 		get_tree().change_scene_to_packed.call_deferred(level.ending_scene)
 		return
@@ -176,7 +184,10 @@ func _on_completed(success: bool) -> void:
 	_refresh_controls()
 
 func _refresh_controls() -> void:
-	var locked := not state.can_edit()
+	timeline.visible = not _first_show
+	play_button.get_parent().visible = not _first_show
+	$MachineShell.drawer.visible = not _first_show
+	var locked := _first_show or not state.can_edit()
 	timeline.set_locked(locked)
 	stop_button.disabled = not locked
 	reset_button.disabled = locked
@@ -190,6 +201,8 @@ func _refresh_controls() -> void:
 
 func _input(event: InputEvent) -> void:
 	if playback == null or not event is InputEventKey or not event.pressed or event.echo:
+		return
+	if _first_show and event.keycode != KEY_F11:
 		return
 	match event.keycode:
 		KEY_F11:
