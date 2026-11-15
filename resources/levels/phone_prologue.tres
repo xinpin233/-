@@ -1,23 +1,34 @@
-[gd_resource type="Resource" script_class="SoundLevelData" load_steps=8 format=3]
+[gd_resource type="Resource" script_class="SoundLevelData" load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/level_data.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/data/audio_clip_data.gd" id="2"]
-[ext_resource type="Resource" path="res://resources/clips/coin.tres" id="3"]
-[ext_resource type="Resource" path="res://resources/clips/dial.tres" id="4"]
-[ext_resource type="Resource" path="res://resources/clips/phone_feedback.tres" id="5"]
-[ext_resource type="PackedScene" path="res://scenes/phone_wide.tscn" id="6"]
+[ext_resource type="Resource" path="res://resources/clips/prologue_coin.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/clips/prologue_dial.tres" id="4"]
+[ext_resource type="Resource" path="res://resources/clips/prologue_phone_feedback.tres" id="5"]
+[ext_resource type="PackedScene" path="res://scenes/story_wide.tscn" id="6"]
 [ext_resource type="PackedScene" path="res://scenes/phone_title.tscn" id="7"]
+[ext_resource type="Resource" path="res://resources/clips/prologue_silence.tres" id="8"]
+[ext_resource type="PackedScene" path="res://scenes/story_dial.tscn" id="9"]
+[ext_resource type="PackedScene" path="res://scenes/story_coin.tscn" id="10"]
+[ext_resource type="PackedScene" path="res://scenes/story_call.tscn" id="11"]
+[ext_resource type="PackedScene" path="res://scenes/story_scratch.tscn" id="12"]
+
+[ext_resource type="PackedScene" path="res://scenes/story_hold.tscn" id="13"]
 
 [resource]
 script = ExtResource("1")
 title = "电话亭"
-clips = Array[ExtResource("2")]([ExtResource("3"), ExtResource("4"), ExtResource("5")])
-initial_order = Array[String](["dial", "coin", "phone_feedback"])
-correct_order = Array[String](["coin", "dial", "phone_feedback"])
+clips = Array[ExtResource("2")]([ExtResource("8"), ExtResource("4"), ExtResource("5"), ExtResource("3")])
+initial_order = Array[String](["silence", "dial", "phone_feedback", "coin"])
+correct_order = Array[String](["silence", "coin", "dial", "phone_feedback"])
 slot_duration = 3.0
-duration = 9.0
-failure_time = 9.0
-stage_starts = PackedFloat32Array(0, 3, 6)
+duration = 12.0
+failure_time = 12.0
+stage_starts = PackedFloat32Array(0, 3, 6, 9)
 opening_scene = ExtResource("6")
+failure_shots = Array[PackedScene]([ExtResource("6"), ExtResource("9"), ExtResource("12"), ExtResource("10")])
+success_shots = Array[PackedScene]([ExtResource("13"), ExtResource("9"), ExtResource("11"), ExtResource("10")])
 ending_scene = ExtResource("7")
 autoplay = true
+follow_clip_shots = true
+lock_first_clip = true

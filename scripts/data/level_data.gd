@@ -15,6 +15,10 @@ extends Resource
 @export var stage_starts: PackedFloat32Array = PackedFloat32Array([0.0, 2.5, 5.0, 7.0])
 @export var ambience: AudioStream
 @export var opening_scene: PackedScene
+@export var follow_clip_shots := false
+@export var lock_first_clip := false
+@export var success_shots: Array[PackedScene] = []
+@export var failure_shots: Array[PackedScene] = []
 @export var ending_scene: PackedScene
 @export var autoplay := false
 @export_file("*.ogv") var success_video: String = ""
@@ -46,8 +50,8 @@ func validation_error() -> String:
 			return "分镜时间必须递增并位于关卡时长内。"
 	var ids: Array[String] = []
 	for clip in clips:
-		if clip == null or clip.id.is_empty() or clip.id in ids or clip.stream == null:
-			return "每段音频必须有唯一标识和可播放素材。"
+		if clip == null or clip.id.is_empty() or clip.id in ids:
+			return "每段音频必须有唯一标识。"
 		ids.append(clip.id)
 	var initial := initial_order.duplicate()
 	var expected := correct_order.duplicate()

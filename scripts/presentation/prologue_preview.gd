@@ -1,6 +1,8 @@
 extends Control
 @export var interactive := false
 @export var title_only := false
+@export var title_ring: AudioStream
+@export var menu_music: AudioStream
 
 var canvas := Control.new()
 var wide := Node2D.new()
@@ -28,7 +30,7 @@ const BUSY = preload("res://assets/prologue/audio/alt_busy.wav")
 func _ready() -> void:
 	theme = SoundGameTheme.create()
 	add_child(sound)
-	bgm.stream = preload("res://assets/prologue/audio/title_bgm.wav")
+	bgm.stream = menu_music if title_only else preload("res://assets/prologue/audio/title_bgm.wav")
 	bgm.volume_db = -15.0
 	bgm.finished.connect(func() -> void: bgm.play())
 	add_child(bgm)
@@ -43,9 +45,20 @@ func _ready() -> void:
 	canvas.add_child(receiver)
 	_load_layers(wide, "wide")
 	_load_layers(receiver, "receiver")
+	if title_only:
+		wide.hide()
+		receiver.hide()
+		var title_wide := Sprite2D.new()
+		title_wide.name = "TitleWide"
+		title_wide.texture = preload("res://assets/prologue/shot_wide.png")
+		title_wide.centered = false
+		canvas.add_child(title_wide)
 	dial.texture = preload("res://assets/prologue/dial.png")
 	dial.centered = false
-	dial.scale = Vector2(1600.0, 1200.0) / dial.texture.get_size()
+	var dial_size := dial.texture.get_size()
+	var dial_scale := minf(1600.0 / dial_size.x, 1200.0 / dial_size.y)
+	dial.scale = Vector2.ONE * dial_scale
+	dial.position = (Vector2(1600, 1200) - dial_size * dial_scale) * 0.5
 	canvas.add_child(dial)
 	canvas.add_child(titles)
 	titles.size = Vector2(1600, 1200)
@@ -86,10 +99,19 @@ func _ready() -> void:
 	else:
 		replay.pressed.connect(_replay)
 	titles.add_child(replay)
+	if title_only:
+		var exit_button := Button.new()
+		exit_button.text = "退出"
+		exit_button.position = Vector2(700, 1090)
+		exit_button.size = Vector2(200, 60)
+		exit_button.pressed.connect(func() -> void: get_tree().quit())
+		titles.add_child(exit_button)
 	resized.connect(_fit)
 	_fit()
 	if title_only:
-		elapsed = 7.5
+		sound.stream = title_ring
+		sound.finished.connect(_repeat_title_ring)
+		_repeat_title_ring()
 	_update_picture()
 	if interactive:
 		_start_show.call_deferred()
@@ -108,7 +130,7 @@ func _build_controls() -> void:
 	content.add_theme_constant_override("separation", 22)
 	margin.add_child(content)
 	var aspect := AspectRatioContainer.new()
-	aspect.ratio = 1.48
+	aspect.ratio = 1.3333334
 	aspect.stretch_mode = AspectRatioContainer.STRETCH_FIT
 	aspect.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_child(aspect)
@@ -214,6 +236,9 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color("#d8cdd9"))
 
 func _process(delta: float) -> void:
+	if title_only:
+		_advance_title(delta)
+		return
 	if interactive and not playing:
 		return
 	var previous := elapsed
@@ -247,20 +272,42 @@ func _process(delta: float) -> void:
 
 	_update_picture()
 
+func _repeat_title_ring() -> void:
+	if elapsed < 4.0 and sound.stream != null:
+		sound.play()
+
+func _advance_title(delta: float) -> void:
+	var was_open := elapsed >= 4.0
+	elapsed = minf(elapsed + delta, 4.0)
+	var pan := smoothstep(0.0, 2.7, elapsed)
+	var art := canvas.get_node("TitleWide") as Sprite2D
+	art.scale = Vector2.ONE * (1600.0 / art.texture.get_width()) * lerpf(1.0, 0.96, pan)
+	art.position = Vector2(32.0 * pan, 265.0 - 190.0 * pan)
+	titles.visible = true
+	titles.modulate.a = smoothstep(1.5, 3.1, elapsed)
+	for child in titles.get_children():
+		if child is Button:
+			child.visible = elapsed >= 4.0
+	sound.volume_db = lerpf(-4.0, -24.0, pan)
+	if not was_open and elapsed >= 4.0 and bgm.stream != null:
+		bgm.play()
+
 func _update_picture() -> void:
 	var answer := smoothstep(1.85, 2.55, elapsed)
 	dial.visible = interactive and elapsed >= 3.0 and elapsed < 6.0
 	wide.modulate.a = 1.0 - answer
 	receiver.modulate.a = answer
 	var pan := smoothstep(6.0, 9.0, elapsed)
-	# A restrained upward camera move stays inside the painted background.
+	# Pull back slightly so the upward movement keeps the full artwork visible.
 	for scene in [wide, receiver]:
-		scene.scale = Vector2.ONE * 1.08
-		scene.position = Vector2(-64, -80 + pan * 80)
+		scene.scale = Vector2.ONE * (1.0 - 0.06 * pan)
+		scene.position = Vector2(48, 0) * pan
 	titles.modulate.a = smoothstep(7.5, 9.5, elapsed)
 	titles.visible = elapsed >= 7.5
 
 func _unhandled_key_input(event: InputEvent) -> void:
+	if title_only:
+		return
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_SPACE:
 		if interactive:
 			_start_show()

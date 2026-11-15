@@ -23,15 +23,17 @@ func start_bed(stream: AudioStream) -> void:
 
 func play_cue(clip: AudioClipData) -> void:
 	cue.stop()
-	if clip != null:
+	if clip != null and clip.stream != null:
 		cue.stream = clip.stream
 		cue.play()
 
 func audition(clip: AudioClipData) -> void:
 	preview.stop()
-	if clip != null:
+	if clip != null and clip.stream != null:
 		preview.stream = clip.stream
 		preview.play()
+	else:
+		preview_finished.emit()
 
 func set_paused(value: bool) -> void:
 	ambience.stream_paused = value

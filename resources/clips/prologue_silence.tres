@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="AudioClipData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/audio_clip_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "silence"
+title = "无声"
+tint = Color(0.83, 0.79, 0.85, 1)
