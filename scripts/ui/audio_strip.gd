@@ -42,7 +42,6 @@ func setup(data: AudioClipData, index: int, count: int, owner_id: int = 0) -> vo
 	panel.content_margin_left = 20
 	panel.content_margin_right = 20
 	add_theme_stylebox_override("panel", panel)
-	tooltip_text = "拖动这段波形到新的位置；点击素材可以试听。"
 
 	var surface := Control.new()
 	surface.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

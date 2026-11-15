@@ -1,9 +1,13 @@
-[gd_resource type="Resource" script_class="AudioClipData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="AudioClipData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/data/audio_clip_data.gd" id="1"]
+
+[ext_resource type="AudioStream" path="res://assets/prologue/audio/02_dial_keys.wav" id="2"]
 
 [resource]
 script = ExtResource("1")
 id = "dial"
 title = "数字键"
 tint = Color(0.65, 0.62, 0.71, 1)
+stream = ExtResource("2")
+waveform = PackedFloat32Array(0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.3253, 0.6118, 0.2060, 0.1448, 0.0738, 0.0750, 0.8911, 1.0000, 0.0774, 0.0064, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0058, 0.3253, 0.6118, 0.1448, 0.1117, 0.0454, 0.2002, 1.0000, 0.1815, 0.0600, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.3253, 0.6118, 0.1609, 0.1235, 0.0640, 0.0750, 1.0000, 0.6105, 0.0600, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000)

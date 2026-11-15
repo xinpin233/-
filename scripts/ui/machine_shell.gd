@@ -8,6 +8,7 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	desk = get_parent()
 	drawer = PanelContainer.new()
+	drawer.hide()
 	drawer.size = Vector2(266, 320)
 	drawer.z_index = 10
 	add_child(drawer)

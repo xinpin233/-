@@ -9,6 +9,8 @@ var playback: SoundPlaybackController
 var _active_slot: int = -1
 var _preview_slot: int = -1
 var _first_show := false
+var _ending := false
+var _film_placeholder: Control
 
 @onready var film: SoundFilmViewport = %Film
 @onready var timeline: SoundAudioTimeline = %AudioTimeline
@@ -53,7 +55,57 @@ func _ready() -> void:
 	_first_show = level.autoplay
 	_reset()
 	if level.autoplay:
+		_begin_fullscreen_show()
 		_play_or_pause.call_deferred()
+
+func _begin_fullscreen_show() -> void:
+	var holder := film.get_parent()
+	_film_placeholder = Control.new()
+	_film_placeholder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.add_child(_film_placeholder)
+	film.reparent(self, false)
+	film.z_index = 2
+	resized.connect(_fit_fullscreen_film)
+	_fit_fullscreen_film()
+	$MachineShell.self_modulate.a = 0.0
+
+func _fit_fullscreen_film() -> void:
+	var width := minf(size.x, size.y * 16.0 / 9.0)
+	var extent := Vector2(width, width * 9.0 / 16.0)
+	film.position = (size - extent) * 0.5
+	film.size = extent
+
+func _reveal_editing_desk() -> void:
+	resized.disconnect(_fit_fullscreen_film)
+	play_button.disabled = true
+	var transport := play_button.get_parent() as Control
+	for control in [timeline, transport]:
+		control.modulate.a = 0.0
+		control.show()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var tween := create_tween().set_parallel()
+	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_method(_pull_back_film, 0.0, 1.0, 1.65)
+	tween.tween_property($MachineShell, "self_modulate:a", 1.0, 1.4)
+	tween.tween_property(timeline, "modulate:a", 1.0, 0.9).set_delay(0.7)
+	tween.tween_property(transport, "modulate:a", 1.0, 0.9).set_delay(0.7)
+	await tween.finished
+	var holder := _film_placeholder.get_parent()
+	holder.remove_child(_film_placeholder)
+	_film_placeholder.queue_free()
+	film.reparent(holder, false)
+	film.z_index = 0
+	_first_show = false
+	play_button.disabled = false
+	state.phase = SoundRunState.Phase.FAILED
+	_reset_presentation()
+
+func _pull_back_film(fraction: float) -> void:
+	_fit_fullscreen_film()
+	var target := _film_placeholder.get_global_rect()
+	film.global_position = film.global_position.lerp(target.position, fraction)
+	film.size = film.size.lerp(target.size, fraction)
 
 func _show_error(message: String) -> void:
 	status.show()
@@ -71,8 +123,9 @@ func _reset() -> void:
 	timeline.rebuild(level, state.order)
 	_reset_presentation()
 
-func _reset_presentation() -> void:
-	film.reset(level.opening_scene)
+func _reset_presentation(keep_opening := false) -> void:
+	if not keep_opening:
+		film.reset(level.opening_scene, level.loop_opening_while_editing and not _first_show)
 	_active_slot = -1
 	progress.value = 0
 	time_label.text = "00.0 / %04.1f s" % level.duration
@@ -92,7 +145,7 @@ func _move_clip(source: int, target: int) -> void:
 	state.order = OrderRules.moved(state.order, source, target)
 	state.phase = SoundRunState.Phase.EDITING
 	timeline.rebuild(level, state.order)
-	_reset_presentation()
+	_reset_presentation(level.loop_opening_while_editing)
 	# Keep keyboard focus on the moved clip after rebuilding its row.
 	timeline.strips[target].grab_focus()
 
@@ -166,9 +219,13 @@ func _on_frame(elapsed: float, stage: int, fraction: float) -> void:
 	timeline.update_playhead(elapsed, _active_slot)
 
 func _on_completed(success: bool) -> void:
+	if _first_show and not success:
+		film.freeze()
+		_reveal_editing_desk()
+		return
 	_first_show = false
 	if success and level.ending_scene != null:
-		get_tree().change_scene_to_packed.call_deferred(level.ending_scene)
+		_play_ending()
 		return
 	if not success and level.autoplay:
 		state.phase = SoundRunState.Phase.FAILED
@@ -183,10 +240,30 @@ func _on_completed(success: bool) -> void:
 	timeline.update_playhead(playback.elapsed, -1)
 	_refresh_controls()
 
+func _play_ending() -> void:
+	_ending = true
+	play_button.disabled = true
+	timeline.set_locked(true)
+	if level.ending_shot != null:
+		var player := await film.roll_to_ending(level.ending_shot, level.transition_duration)
+		var ring := audio.ambience
+		if level.ending_sound != null:
+			ring.stream = level.ending_sound
+			ring.play()
+			create_tween().tween_property(ring, "volume_db", -26.0, 4.2)
+		await player.finished
+		var ending := player.get_parent()
+		var still := ending.get_node("EndingStill") as TextureRect
+		var start_label := ending.get_node("StartGame") as Label
+		still.show()
+		player.hide()
+		create_tween().tween_property(start_label, "modulate:a", 1.0, 0.9)
+		return
+	get_tree().change_scene_to_packed.call_deferred(level.ending_scene)
+
 func _refresh_controls() -> void:
 	timeline.visible = not _first_show
 	play_button.get_parent().visible = not _first_show
-	$MachineShell.drawer.visible = not _first_show
 	var locked := _first_show or not state.can_edit()
 	timeline.set_locked(locked)
 	stop_button.disabled = not locked
@@ -202,7 +279,7 @@ func _refresh_controls() -> void:
 func _input(event: InputEvent) -> void:
 	if playback == null or not event is InputEventKey or not event.pressed or event.echo:
 		return
-	if _first_show and event.keycode != KEY_F11:
+	if (_first_show or _ending) and event.keycode != KEY_F11:
 		return
 	match event.keycode:
 		KEY_F11:
